@@ -12,7 +12,6 @@ def read_yaml(file_path):
     return data
 
 
-# Загружаем все переводы
 trans_data = {}
 for file in glob.glob("translations/*.yaml"):
     ln = os.path.splitext(os.path.basename(file))[0]
@@ -83,10 +82,10 @@ from telebot.types import Message, Message as M, CallbackQuery, CallbackQuery as
 
 async def tr(obj: M|C|Message|CallbackQuery) -> Translator:
     """
-    Get translator from message or callback
+    Get translator by Message or CallbackQuery
     
     Args:
-        obj: message or callbackquery object
+        obj: Message or CallbackQuery object
         
     Returns:
         Translator

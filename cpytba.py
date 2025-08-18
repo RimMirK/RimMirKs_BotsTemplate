@@ -1,30 +1,19 @@
-import logging
 from typing import Any, List, Optional, Union
-from telebot.async_telebot import AsyncTeleBot
-from telebot import types
-from logging import Logger
+from asyncio import sleep
+import logging
 import time
-from translator import tr
 
 from telebot.asyncio_helper import ApiTelegramException
-from asyncio import sleep
-
-from database import DB
-
-
 from telebot.asyncio_storage import StatePickleStorage
+from telebot.async_telebot import AsyncTeleBot
+from telebot import types
 
-import time
 from database import DB
-from logging import Logger
 
-
-
-from telebot.util import user_link
 
 
 class CustomAsyncTeleBot(AsyncTeleBot):
-    logger: Logger
+    logger: logging.Logger
     chats_last_send: dict
     me: types.User
     db: DB
@@ -65,7 +54,18 @@ class CustomAsyncTeleBot(AsyncTeleBot):
         
             
 
-    def add_command(self, index: int, commands: List[str], description: dict[str, Any], admin: bool = False, to_menu=True):
+    def add_command(self,index: int, commands: List[str], description: dict[str, str], admin: bool = False, to_menu=True):
+        """
+        Add command to menu in tg
+        
+        Args:
+            index (int): index of command
+            commands (List[str]): list of commands. First command will be shown in menu
+            description (Dict[str, str]): dict {lang_code: description}
+            admin (bool): pass True if command only for admins
+            to_menu (bool): pass False to avoid adding command to menu
+            
+        """
         if admin:
             for lang, desc in description.items():
                 if not self.admin_commands.get(lang):
@@ -101,11 +101,19 @@ class CustomAsyncTeleBot(AsyncTeleBot):
                                         types.ReplyKeyboardRemove, types.ForceReply
                                      ]]=None,
         reply_to_message_id:         Optional[int]=None,
+        reply_parameters:            Optional[types.ReplyParameters]=None,
         timeout:                     Optional[int]=None,
         quote:                       Optional[bool]=False,
         send_limited:                Optional[bool]=False,
         antiflood:                   Optional[bool]=True,
     ) -> types.Message:
+        """
+        Reply to message
+        
+        - pass `quote=True` to reply as reply
+        - pass `send_limited=True` to send messages with interval to avoid flood wait
+        - pass `antiflood=False` to disable auto resend message after getting flood wait
+        """
         args = dict(
             chat_id=message.chat.id,
             text=text,
@@ -114,8 +122,18 @@ class CustomAsyncTeleBot(AsyncTeleBot):
             disable_web_page_preview=disable_web_page_preview,
             disable_notification=disable_notification,
             protect_content=protect_content,
-            reply_to_message_id=reply_to_message_id or (message.id if quote else None),
-            allow_sending_without_reply=allow_sending_without_reply,
+            reply_parameters=(
+                reply_parameters if reply_parameters else (
+                    types.ReplyParameters(
+                        message_id=reply_to_message_id,
+                        chat_id=message.chat.id,
+                        allow_sending_without_reply=allow_sending_without_reply
+                    ) if reply_to_message_id else (
+                        types.ReplyParameters(message_id=message.id, chat_id=message.chat.id, allow_sending_without_reply=False)
+                        if quote else None
+                    )
+                )
+            ),
             reply_markup=reply_markup,
             timeout=timeout,
             message_thread_id=message.message_thread_id if not quote and message.is_topic_message else None
@@ -136,7 +154,7 @@ class CustomAsyncTeleBot(AsyncTeleBot):
             if antiflood:
                 for i in range(4):
                     try:
-                        return await self.send_message(**args)
+                        return await self.send_message(**args, )
                     except ApiTelegramException as ex:
                         if ex.error_code == 429:
                             self.logger.warning(f"FLOOD_WAIT in reply {i+1} try {ex.result_json['parameters']['retry_after']} sec")
@@ -158,6 +176,9 @@ class CustomAsyncTeleBot(AsyncTeleBot):
         link_preview_options: types.LinkPreviewOptions=None,
         **_
     ) -> Union[types.Message, bool]:
+        """
+        Edit message or caption
+        """
         params = dict(
             chat_id = message.chat.id,
             message_id=message.id,
@@ -173,6 +194,9 @@ class CustomAsyncTeleBot(AsyncTeleBot):
             return await self.edit_message_caption(**params, caption=text, caption_entities=entities)
         
     async def delete(self, message: types.Message, /, timeout: int = None):
+        """
+        delete message
+        """
         return await self.delete_message(message.chat.id, message.id, timeout=timeout)
 
     async def answer(
@@ -183,17 +207,17 @@ class CustomAsyncTeleBot(AsyncTeleBot):
                           types.ReplyKeyboardRemove  | types.ForceReply = None,
             **kwargs
         ):
+        """
+        Reply or edit message
+        """
         return await (self.reply if isinstance(obj, types.Message) else self.edit)(
                obj if isinstance(obj, types.Message) else obj.message,
                text, reply_markup=reply_markup, **kwargs
         )
 
     async def send_limited(self, _chat_id, func, /, *args, **kwargs):
-        """
-        @seeklay thanks a lot for this feature
-        """
+        # @seeklay thanks a lot for this feature
         self.logger.debug(f'send_limited, {_chat_id!r}, {func!r}')
-        
         cur, last = (time.time(), self.chats_last_send.get(_chat_id, 3))
         if cur - last >= 3:
             self.chats_last_send[_chat_id] = cur 
@@ -207,6 +231,9 @@ class CustomAsyncTeleBot(AsyncTeleBot):
             return await self.send_limited(_chat_id, func, *args, **kwargs)
     
     async def state(self, obj: types.Message | types.CallbackQuery, state: str, **_params):
+        """
+        set state by Message or CallbackQuery
+        """
         message = obj.message if hasattr(obj, 'message') else obj
         params = dict(
             user_id=obj.from_user.id,
@@ -220,6 +247,9 @@ class CustomAsyncTeleBot(AsyncTeleBot):
         await self.set_state(**params)
     
     async def set_data(self, obj, _params=None, **data):
+        """
+        set state data by Message or CallbackQuery
+        """
         message = obj.message if hasattr(obj, 'message') else obj
         params = dict(
             user_id=obj.from_user.id,
@@ -234,6 +264,9 @@ class CustomAsyncTeleBot(AsyncTeleBot):
             d.update(**data)
 
     async def unstate(self, obj, **_params):
+        """
+        set delete state by Message or CallbackQuery
+        """
         message = obj.message if hasattr(obj, 'message') else obj
         params = dict(
             user_id=obj.from_user.id,
@@ -246,6 +279,9 @@ class CustomAsyncTeleBot(AsyncTeleBot):
         await self.delete_state(**params)
     
     async def get_data(self, obj, **_params):
+        """
+        get state data by Message or CallbackQuery
+        """
         message = obj.message if hasattr(obj, 'message') else obj
         params = dict(
             user_id=obj.from_user.id,
