@@ -21,16 +21,16 @@ async def main(bot: Bot, db: DB, logger: Logger):
     async def _rules(msg: Message):
         _ = await tr(msg)
         
-        with open(_('rules_file', 'rules.en.md'), 'r', encoding='utf-8') as f:
+        with open("rules/"+_('rules_file', 'rules.ru.md'), 'r', encoding='utf-8') as f:
             url = paste(f.read(), 'md')
         
         if not await db.is_rules_confirmed(msg.from_user.id):
             rm = IM()
-            rm.add(IB(_('confirm_rules_btn'), callback_data='confirm_rules'))
+            rm.add(IB(_('rules.confirm_rules_btn'), callback_data='confirm_rules'))
             
-            await bot.reply(msg, _('confirm_rules_text').format(rules_url=url), reply_markup=rm)
+            await bot.reply(msg, _('rules.confirm_rules_text').format(rules_url=url), reply_markup=rm)
         else:
-            await bot.reply(msg, _('rules_text').format(rules_url=url))
+            await bot.reply(msg, _('rules.rules_text').format(rules_url=url))
 
 
     @bot.callback_query_handler(cs='confirm_rules')
@@ -40,6 +40,6 @@ async def main(bot: Bot, db: DB, logger: Logger):
         
         
         rm = IM()
-        rm.add(IB(_('get_started'), callback_data='get_started'))
+        rm.add(IB(_('start_lang.get_started'), callback_data='get_started'))
         
-        await bot.edit(c.message, _('rules_confirmed_text').format(rules_url=_('rules_url')), reply_markup=rm)
+        await bot.edit(c.message, _('rules.rules_confirmed_text'), reply_markup=rm)

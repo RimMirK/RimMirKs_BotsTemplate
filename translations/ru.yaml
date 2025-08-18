@@ -2,7 +2,7 @@ __title__: 🏴 Русский
 
 
 
-start_and_lang:
+start_lang:
     lang_set_to: Язык установлен на Русский!
     start_text: |
         Привет! Я бот!
@@ -11,6 +11,8 @@ start_and_lang:
 
     get_started: Начнем!
     choose_lang: Выбери язык
+
+    error_start_text: Упс! Похоже Ваша ссылка повредилась
 
 
 rules:
@@ -40,7 +42,11 @@ rules:
 
 menu:
     menu_text: |
-        {{ b("test")|a  safe }}
+        <b>Меню</b>
+        
+        ID: <code>{{ user_id }}</code>
+
+    copy_my_id_btn: Скопировать свой ID
 
 
 you_are_banned_inline: Ты забанен!
@@ -81,6 +87,8 @@ errors:
         </pre>
 
 ban:
+    enter_value: Введи значение!
+    input_value: Введи значение!
     user_banned: Юзер <code>{user_id}</code> забанен навсегда!
     user_unbanned: Юзер <code>{user_id}</code> Разбанен!
 

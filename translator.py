@@ -50,10 +50,17 @@ class Translator:
         self.logger = getLogger('BOT').getChild("translator")
 
     def __call__(self, key, default="Error: translation not found!", **kwargs) -> str:
-        if key in self.data:
-            text = self.data[key]
-        else:
-            return default
+        keys = key.split(".")
+        current = self.data
+
+        for k in keys:
+            if isinstance(current, dict) and k in current:
+                current = current[k]
+            else:
+                return default
+
+        text = current
+
 
         if kwargs:
             try:
@@ -95,7 +102,19 @@ async def tr(obj: M|C|Message|CallbackQuery) -> Translator:
     return get_translator(lang)
 
 def get_text_translations(key: str, default="") -> dict:
-    if key not in {k for d in trans_data.values() for k in d.keys()}:
+    def key_exists(d, keys):
+        current = d
+        for k in keys:
+            if isinstance(current, dict) and k in current:
+                current = current[k]
+            else:
+                return False
+        return True
+
+    keys = key.split(".")
+    if not any(key_exists(d, keys) for d in trans_data.values()):
         return default
+
     return {lang: get_translator(lang)(key, default) for lang in trans_data}
+
 

@@ -1,22 +1,22 @@
-
+from contextlib import redirect_stdout, redirect_stderr
+from traceback import format_exc, print_exc
+from logging import Logger
+import asyncio, time, sys
+from io import StringIO
 import time
+
+
+from telebot.util import extract_arguments
+from telebot.types import Message as M
 from telebot.types import (
     Message as M
 )
 
+from utils import b, pre, code as code_html, escape, paste
+from translator import get_text_translations, tr
 from cpytba import CustomAsyncTeleBot as Bot
 from database import DB
-from logging import Logger
-from telebot.types import Message as M
-from telebot.util import extract_arguments
-from database import DB
-import asyncio, time, sys
-from io import StringIO
-from contextlib import redirect_stdout, redirect_stderr
-from traceback import format_exc, print_exc
-from utils import b, pre, code as code_html, escape
-from utils import paste
-from translator import get_text_translations
+
 
 
 async def main(bot: Bot, db: DB, logger: Logger):

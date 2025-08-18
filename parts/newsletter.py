@@ -27,7 +27,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         if arg := (msg.text.split(maxsplit=1)[1] if len(msg.text.split()) >= 2 else ''):
             if '-important' in arg or '-i' in arg:
                 imp = True
-                await bot.reply(msg, _('important_mode_enabled'))
+                await bot.reply(msg, _('newsletter.important_mode_enabled'))
                 await bot.set_data(obj, important=True)
         else:
             imp = False
@@ -36,11 +36,11 @@ async def main(bot: Bot, db: DB, logger: Logger):
     
         rm = IM()
         rm.add(IB(
-            _('switch_important_mode', on=imp),
+            _('newsletter.switch_important_mode', on=imp),
             callback_data='newsletter:toggle_important_mode')
         )
     
-        await bot.reply(msg, _('write_msg'), reply_markup=rm)
+        await bot.reply(msg, _('newsletter.write_msg'), reply_markup=rm)
         
     
     @bot.callback_query_handler(None, c='newsletter:toggle_important_mode')
