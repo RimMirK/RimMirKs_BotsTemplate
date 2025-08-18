@@ -25,7 +25,7 @@ def format_date(timestamp: float, for_zero: str = "", add_utc=True) -> str:
             + (" (UTC)" if add_utc else "")
 
 
-def paste(text: str, ext: str = '', allow_206: bool = False) -> str:
+def pasters(text: str, ext: str = '', allow_206: bool = False) -> str:
     """
     Upload some text or code to the [paste.rs](https://paste.rs/)
     
@@ -61,3 +61,5 @@ def paste(text: str, ext: str = '', allow_206: bool = False) -> str:
         raise requests.exceptions.HTTPError(f"Unexpected status {r.status_code}: {r.text}")
     
     return r.text + (f".{ext.removeprefix('.')}" if ext else '')
+
+paste = pasters # default paster is paste.rs

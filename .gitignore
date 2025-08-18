@@ -1,0 +1,25 @@
+# pycache
+__pycache__/
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# telebot
+.state-save/
+
+database.db
+*.log
+
+
+.*
+!.vscode
+!.gitignore
+
+config.py
