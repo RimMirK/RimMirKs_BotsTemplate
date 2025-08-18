@@ -18,10 +18,13 @@ def cache_with_signature(func):
 @cache_with_signature
 def escape(text: str) -> str:
     """
-    Экранирует специальные HTML символы в строке.
+    Escapes special HTML characters in a string.
 
-    :param str text: Текст для экранирования.
-    :return str: Экранированный текст.
+    Args:
+        text (str): Text to escape.
+
+    Returns:
+        str: Escaped text.
     """
     text = str(text)
     chars = {"&": "&amp;", "<": "&lt;", ">": "&gt;"}
@@ -34,14 +37,18 @@ def escape(text: str) -> str:
 @cache_with_signature
 def format_tag(tag_name: str, content: str = "", escape_content=True, close_tag=True, **kwargs) -> str:
     """
-    Генерирует HTML тег.
+    Generates an HTML tag.
 
-    :param str tag_name: Имя тега. Например "a" или "div".
-    :param str content: Содержимое тега, defaults to "".
-    :param bool escape_content: Нужно ли экранировать контент, defaults to True.
-    :param bool close_tag: Нужен ли закрывающий тег, defaults to True.
-    :param kwargs: Атрибуты тега. Названия атрибутов можно указывать с "_".
-    :return str: Сгенерированный HTML тег.
+    Args:
+        tag_name (str): Tag name. For example, "a" or "div".
+        content (str): Tag content. Optional. Default is "".
+        escape_content (bool): Whether to escape the content. Optional. Default is True.
+        close_tag (bool): Whether to include a closing tag. Optional. Default is True.
+        **kwargs: Tag attributes. Attribute names can be written starts with "_".
+
+    Returns:
+        str: Generated HTML tag.
+
     """
     return (
         f"""<{escape(tag_name)}{''.join([f' {k.removeprefix("_")}="{escape(v)}"' for k,v in kwargs.items()])}>""" +
@@ -52,35 +59,47 @@ def format_tag(tag_name: str, content: str = "", escape_content=True, close_tag=
 @cache_with_signature
 def code(text: str, escape_html=True) -> str:
     """
-    Создает HTML тег для кода.
+    Creates an HTML tag for code.
 
-    :param str text: Код для размещения в теге.
-    :param bool escape_html: Нужно ли экранировать HTML в коде, defaults to True.
-    :return str: Сгенерированный HTML тег для кода.
+    Args:
+        text (str): Code to be placed inside the tag.
+        escape_html (bool): Whether to escape HTML inside the code. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for code.
+
     """
     return format_tag('code', text, escape_content=escape_html)
 
 @cache_with_signature
 def pre(text: str, lang: str = '', escape_html=True) -> str:
     """
-    Генерирует HTML тег для отображения блока кода.
+    Generates an HTML tag for displaying a code block.
 
-    :param str text: Код для отображения в теге.
-    :param str lang: Язык программирования, defaults to ''.
-    :param bool escape_html: Нужно ли экранировать HTML, defaults to True.
-    :return str: Сгенерированный HTML тег для отображения блока кода.
+    Args:
+        text (str): Code to display inside the tag.
+        lang (str): Programming language. Optional. Default is ''.
+        escape_html (bool): Whether to escape HTML. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for displaying a code block.
+
     """
     return format_tag('pre', text, language=lang, escape_content=escape_html)
 
 # @cache_with_signature
 def blockquote(text: str, expandable=False, escape_html=True) -> str:
     """
-    Создает HTML тег для блока цитаты.
+    Creates an HTML tag for a blockquote.
 
-    :param str text: Текст для размещения в теге.
-    :param bool expandable: Можно ли разворачивать цитату, defaults to False.
-    :param bool escape_html: Нужно ли экранировать HTML, defaults to True.
-    :return str: Сгенерированный HTML тег для блока цитаты.
+    Args:
+        text (str): Text to be placed inside the tag.
+        expandable (bool): Whether the quote can be expanded. Optional. Default is False.
+        escape_html (bool): Whether to escape HTML. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for a blockquote.
+
     """
     if expandable:
         return format_tag('blockquote', text, escape_content=escape_html, expandable='')
@@ -90,13 +109,17 @@ def blockquote(text: str, expandable=False, escape_html=True) -> str:
 
 def bq(text: str, expandable=False, escape_html=True) -> str:
     """
-    Тоже самое что и blockquote.
-    Создает HTML тег для блока цитаты.
+    Same as blockquote.  
+    Creates an HTML tag for a blockquote.
 
-    :param str text: Текст для размещения в теге.
-    :param bool expandable: Можно ли разворачивать цитату, defaults to False.
-    :param bool escape_html: Нужно ли экранировать HTML, defaults to True.
-    :return str: Сгенерированный HTML тег для блока цитаты.
+    Args:
+        text (str): Text to be placed inside the tag.
+        expandable (bool): Whether the quote can be expanded. Optional. Default is False.
+        escape_html (bool): Whether to escape HTML. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for a blockquote.
+
     """
     if expandable:
         return format_tag('blockquote', text, escape_content=escape_html, expandable='')
@@ -106,66 +129,89 @@ def bq(text: str, expandable=False, escape_html=True) -> str:
 @cache_with_signature
 def b(text: str, escape_html=True) -> str:
     """
-    Создает HTML тег для жирного текста.
+    Creates an HTML tag for bold text.
 
-    :param str text: Текст для размещения в теге.
-    :param bool escape_html: Нужно ли экранировать HTML, defaults to True.
-    :return str: Сгенерированный HTML тег для жирного текста.
+    Args:
+        text (str): Text to be placed inside the tag.
+        escape_html (bool): Whether to escape HTML. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for bold text.
+
     """
     return format_tag('b', text, escape_content=escape_html)
 
 @cache_with_signature
 def i(text: str, escape_html=True) -> str:
     """
-    Создает HTML тег для курсива.
+    Creates an HTML tag for italic text.
 
-    :param str text: Текст для размещения в теге.
-    :param bool escape_html: Нужно ли экранировать HTML, defaults to True.
-    :return str: Сгенерированный HTML тег для курсива.
+    Args:
+        text (str): Text to be placed inside the tag.
+        escape_html (bool): Whether to escape HTML. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for italic text.
+
     """
     return format_tag('i', text, escape_content=escape_html)
 
 @cache_with_signature
 def a(text: str, url: str, escape_html=True) -> str:
     """
-    Создает HTML тег для ссылки.
+    Creates an HTML tag for a hyperlink.
 
-    :param str text: Текст ссылки.
-    :param str url: URL для ссылки.
-    :param bool escape_html: Нужно ли экранировать HTML, defaults to True.
-    :return str: Сгенерированный HTML тег для ссылки.
+    Args:
+        text (str): Link text.
+        url (str): URL for the link.
+        escape_html (bool): Whether to escape HTML. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for the hyperlink.
+
     """
     return format_tag('a', text, href=url, escape_content=escape_html)
 
 @cache_with_signature
 def u(text: str, escape_html=True) -> str:
     """
-    Создает HTML тег для подчеркивания текста.
+    Creates an HTML tag for underlined text.
 
-    :param str text: Текст для размещения в теге.
-    :param bool escape_html: Нужно ли экранировать HTML, defaults to True.
-    :return str: Сгенерированный HTML тег для подчеркивания текста.
+    Args:
+        text (str): Text to be placed inside the tag.
+        escape_html (bool): Whether to escape HTML. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for underlined text.
+
     """
     return format_tag('u', text, escape_content=escape_html)
 
 @cache_with_signature
 def s(text: str, escape_html=True) -> str:
     """
-    Создает HTML тег для зачеркнутого текста.
+    Creates an HTML tag for strikethrough text.
 
-    :param str text: Текст для размещения в теге.
-    :param bool escape_html: Нужно ли экранировать HTML, defaults to True.
-    :return str: Сгенерированный HTML тег для зачеркнутого текста.
+    Args:
+        text (str): Text to be placed inside the tag.
+        escape_html (bool): Whether to escape HTML. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for strikethrough text.
+
     """
     return format_tag('s', text, escape_content=escape_html)
 
 @cache_with_signature
 def spoiler(text: str, escape_html=True) -> str:
     """
-    Создает HTML тег для спойлера.
+    Creates an HTML tag for a spoiler.
 
-    :param str text: Текст для размещения в теге.
-    :param bool escape_html: Нужно ли экранировать HTML, defaults to True.
-    :return str: Сгенерированный HTML тег для спойлера.
+    Args:
+        text (str): Text to be placed inside the tag.
+        escape_html (bool): Whether to escape HTML. Optional. Default is True.
+
+    Returns:
+        str: Generated HTML tag for a spoiler.
     """
     return format_tag('tg-spoiler', text, escape_content=escape_html)
