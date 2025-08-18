@@ -1,4 +1,6 @@
-BOT_TOKEN = ''
+with open('.api-token', 'r') as f:
+    BOT_TOKEN = f.read()
+
 
 
 
