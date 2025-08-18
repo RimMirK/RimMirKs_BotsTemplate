@@ -61,6 +61,7 @@ cmd_desc:
     get_error: "<ID> Получить ошибку"
     ban: "<ID/Ответ> забанить юзера"
     unban: "<ID/Ответ> разбанить юзера"
+    newsletter: "[-i режим важности] Рассылка"
 
 
 errors:
@@ -103,3 +104,53 @@ newsletter:
     write_msg: Напиши сообщение
 
     switch_important_mode:  В{{ '' if on else 'ы' }}ключить режим важности
+
+    send_one_media: Отлично! Теперь отправь <u>одну</u> картинку, видео или гифку
+
+    skip: Пропустить
+
+    add_links: |
+        добавьте ссылку(и)
+
+        Формат:
+        <pre>текст первой кнопки первого ряда
+        ссылка кнопки
+        
+        1 ряд 2 кнопка
+        ссылка
+        
+        
+        2 ряд 1 кнопка
+        ссылка
+        
+        ...</pre>
+    
+    everything_ok: Все так, как ты хотел?
+
+    started: Рассылка запущена
+
+    end: |
+        Рассылка завершена!
+        отправлено {{ c }} {{ plural_ru(c, ["юзеру", "юзерам", "юзерам"]) }}
+        успешно дошло до {{ s }} {{ plural_ru(s, ["юзера", "юзеров", "юзеров"]) }}
+        
+        Ошибок: {{ errors|length }}
+        {% set all_errors = "" %}
+        {% for user, ex in errors %}
+            {{ user ~ ": " ~ (ex.description or ex|string) ~ "\n" }}
+            {% set all_errors = all_errors + user ~ ": " ~ (ex.description or ex|string) ~ "\n" %}
+            {{ all_errors }}
+        {% endfor %}
+
+        {{ all_errors }}
+        {% if all_errors|length > 4 %}
+        {{ paste(all_errors) }}
+        {% else %}
+        <blockquote>{% for user, ex in errors %}
+        <code>{{ user }}</code>: {{ ex.description or ex }}
+            {% endfor %}
+        </blockquote>
+        {% endif %}
+
+
+    cancelled: Рассылка отменена!

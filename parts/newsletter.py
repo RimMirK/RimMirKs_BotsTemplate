@@ -1,4 +1,5 @@
 
+import asyncio
 from telebot.types import (
     InlineKeyboardMarkup as IM, InlineKeyboardButton as IB,
     ReplyKeyboardMarkup as RM, KeyboardButton as KB,
@@ -11,11 +12,11 @@ from database import DB
 from translator import get_text_translations, tr
 from logging import Logger
 
-from utils.utils import paste
 
 async def main(bot: Bot, db: DB, logger: Logger):
 
     
+    bot.add_command(-1, ['newsletter'], get_text_translations('cmd_desc.newsletter'), True)
     @bot.callback_query_handler(None, cdata='newsletter', is_admin=True)
     @bot.message_handler(['newsletter'], is_admin=True)
     async def _newsletter(obj: M | C):
@@ -23,7 +24,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         _ = await tr(obj)
         
         msg = obj if isinstance(obj, M) else obj.message
-        await bot.set_state(obj.from_user.id, 'newsletter:message', msg.chat.id)
+        await bot.state(obj, 'newsletter:message')
         if arg := (msg.text.split(maxsplit=1)[1] if len(msg.text.split()) >= 2 else ''):
             if '-important' in arg or '-i' in arg:
                 imp = True
@@ -36,7 +37,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
     
         rm = IM()
         rm.add(IB(
-            _('newsletter.switch_important_mode', on=imp),
+            _('newsletter.switch_important_mode', on=not imp),
             callback_data='newsletter:toggle_important_mode')
         )
     
@@ -53,17 +54,17 @@ async def main(bot: Bot, db: DB, logger: Logger):
         _ = await tr(c)
         
         if important:
-            await bot.set_data(c, important=True)
-            await bot.edit_message_reply_markup(
-                c.message.chat.id, c.message.id,
-                reply_markup=IM().add(IB(_("switch_important_mode", on=False),
-                callback_data='newsletter:toggle_important_mode'))
-            )
-        else:
             await bot.set_data(c, important=False)
             await bot.edit_message_reply_markup(
                 c.message.chat.id, c.message.id,
-                reply_markup=IM().add(IB(_("switch_important_mode", on=False),
+                reply_markup=IM().add(IB(_("newsletter.switch_important_mode", on=True),
+                callback_data='newsletter:toggle_important_mode'))
+            )
+        else:
+            await bot.set_data(c, important=True)
+            await bot.edit_message_reply_markup(
+                c.message.chat.id, c.message.id,
+                reply_markup=IM().add(IB(_("newsletter.switch_important_mode", on=False),
                 callback_data='newsletter:toggle_important_mode'))
             )
         
@@ -72,39 +73,42 @@ async def main(bot: Bot, db: DB, logger: Logger):
         
     @bot.message_handler(state='newsletter:message')
     async def _newsletter_message(msg: M):
-        async with bot.retrieve_data(msg.from_user.id, msg.chat.id) as data:
-            data['text'] = msg.html_text
+        _ = await tr(msg)
+        
+        await bot.set_data(msg, text=msg.html_text)
         await bot.reply(msg, 
-            'Отлично! Теперь отправь <u>одну</u> картинку, видео или гифку',
-            reply_markup=RM(True).add(KB("Пропустить")), quote=True
+            _("newsletter.send_one_media"),
+            reply_markup=RM(True).add(KB(_("newsletter.skip"))), quote=True
         )
-        await bot.set_state(msg.from_user.id, 'newsletter:media', msg.chat.id)
+        await bot.state(msg, 'newsletter:media')
     
     
     @bot.message_handler(state='newsletter:media', content_types=['text', 'photo', 'video', 'animation'])
     async def _newsletter_media(msg: M):
-        if msg.text and msg.text == 'Пропустить':
-            async with bot.retrieve_data(msg.from_user.id, msg.chat.id) as data:
-                data['file_type'] = 'nomedia'
-                data['file_id'] = None
+        _ = await tr(msg)
+        
+        if msg.text and msg.text == _("newsletter.skip"):
+            await bot.set_data(msg, file_type='nomedia', file_id=None)
         else:
-            async with bot.retrieve_data(msg.from_user.id, msg.chat.id) as data:
-                data['file_type'] = (
+            await bot.set_data(msg,
+                file_type=(
                     'video' if msg.video
                     else (
                         'gif' if msg.animation
                         else 'photo'
                     )
-                )
-                data['file_id'] = (msg.animation or msg.video or msg.photo[-1]).file_id
+                ),
+                file_id=(msg.animation or msg.video or msg.photo[-1]).file_id
+            )
         
         
-        await bot.reply(msg, 'добавьте ссылку(и)')
-        await bot.set_state(msg.from_user.id, 'newsletter:kb', msg.chat.id)
+        await bot.reply(msg, _('newsletter.add_links'))
+        await bot.state(msg, 'newsletter:kb')
     
     @bot.message_handler(state='newsletter:kb')
     async def _newsletter_kb(msg: M):
-        if msg.text and msg.text == 'Пропустить':
+        _ = await tr(msg)
+        if msg.text and msg.text == _('newsletter.skip'):
             rm = None
         else:
             str_rows = msg.text.split('\n\n\n')
@@ -116,13 +120,11 @@ async def main(bot: Bot, db: DB, logger: Logger):
                     buttuns.append(IB(*btn.split('\n')))   
                 rm.add(*buttuns)
         
-        async with bot.retrieve_data(msg.from_user.id, msg.chat.id) as data:
-            data['rm'] = rm
-            text = data['text']
-            file_id = data['file_id']
-            file_type = data['file_type']
-            
-        user = await db.get_user(msg.from_user.id)
+        await bot.set_data(msg, rm=rm)
+        data = await bot.get_data(msg)
+        text = data['text']
+        file_id = data['file_id']
+        file_type = data['file_type']
             
         params = dict(
             chat_id = msg.chat.id,
@@ -132,8 +134,8 @@ async def main(bot: Bot, db: DB, logger: Logger):
         
         await bot.set_state(msg.from_user.id, "newsletter:confirm", msg.chat.id)
         
-        await bot.reply(msg, "Все так, как ты хотел?", reply_markup=RM(True).add(
-            KB(f"✅ Да"), KB(f"Нет ❌")
+        await bot.reply(msg, _("newsletter.everything_ok"), reply_markup=RM(True).add(
+            KB(f"✅"), KB(f"❌")
         ))
         
         match file_type:
@@ -149,16 +151,18 @@ async def main(bot: Bot, db: DB, logger: Logger):
             
     @bot.message_handler(state='newsletter:confirm')
     async def _newsletter_confirm(msg: M):
-        if msg.text == f'✅ Да':
-            await bot.reply(msg, "Пошла жара", reply_markup=RKR())
-            async with bot.retrieve_data(msg.from_user.id, msg.chat.id) as data:
-                rm = data['rm']
-                text = data['text']
-                file_id = data['file_id']
-                file_type = data['file_type']
-                important = data['important']
+        _ = await tr(msg)
+        
+        if msg.text == f'✅':
+            await bot.reply(msg, _('newsletter.started'), reply_markup=RKR())
+            data = await bot.get_data(msg)
+            rm = data['rm']
+            text = data['text']
+            file_id = data['file_id']
+            file_type = data['file_type']
+            important = data['important']
                 
-            await bot.delete_state(msg.from_user.id, msg.chat.id)
+            await bot.unstate(msg)
             
             errors = []
             c = 0
@@ -185,10 +189,11 @@ async def main(bot: Bot, db: DB, logger: Logger):
                     s += 1
                 except Exception as ex:
                     errors.append((user['user_id'], ex))
+                await asyncio.sleep(.025)
             
-            await bot.reply(msg, f"Рассылка завершена!\nотправлено {c} юзерам\nуспешно дошло до {s} юзеров\n\nОшибок: {len(errors)}\n" + '\n'.join(f"<code>{user}</code>: {ex.description or str(ex)}" for user, ex in errors))
+            await bot.reply(msg, _('newsletter.end', c=c, s=s, errors=errors))
             
         else:
-            await bot.reply(msg, "Рассылка отменена", reply_markup=RKR())
-            await bot.delete_state(msg.from_user.id, msg.chat.id)
+            await bot.reply(msg, _('newsletter.cancelled'), reply_markup=RKR())
+            await bot.unstate(msg)
             

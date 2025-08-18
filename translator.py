@@ -42,6 +42,18 @@ env.globals.update({
     if inspect.isfunction(obj)
 })
 
+def plural_ru(n: int, forms: tuple[str, str, str]) -> str:
+    n = abs(n) % 100
+    if 11 <= n <= 19:
+        return forms[2]
+    i = n % 10
+    if i == 1:
+        return forms[0]
+    if 2 <= i <= 4:
+        return forms[1]
+    return forms[2]
+
+env.globals['plural_ru'] = plural_ru
 
 class Translator:
     def __init__(self, lang, data):
