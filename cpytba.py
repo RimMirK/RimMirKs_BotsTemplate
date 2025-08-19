@@ -55,7 +55,6 @@ class CustomAsyncTeleBot(AsyncTeleBot):
             
 
     def add_command(self,index: int, commands: List[str], description: dict[str, str], admin: bool = False, to_menu=True):
-        return
         """
         Add command to menu in tg
         

@@ -2,6 +2,7 @@ import importlib
 import logging
 import asyncio
 import pkgutil
+import sys
 import os
 
 
@@ -9,15 +10,15 @@ from middlewares import setup_middlewares
 from translator import get_langs
 from filters import set_filters
 from config import BOT_TOKEN
-from database import db
+from database import DB, db
 
 
 from cpytba import CustomAsyncTeleBot
 from telebot.types import (
-    BotCommand,
-    BotCommandScopeChat,
     BotCommandScopeChatMember,
-    BotCommandScopeDefault
+    BotCommandScopeDefault,
+    BotCommandScopeChat,
+    BotCommand,
 )
 
 
@@ -48,7 +49,8 @@ async def load_bot_parts(bot, db, logger):
     logger.info(f"Failed to load bot parts: {', '.join(failed)}")
 
 
-async def set_commands(bot, db):
+async def set_commands(bot: CustomAsyncTeleBot, db: DB) -> tuple[bool]:
+    successes = []
     # Set commands for each language
     for lang in get_langs():
         # Prepare user commands
@@ -73,7 +75,13 @@ async def set_commands(bot, db):
             for cmd in bot.commands[lang]
             if cmd['to_menu']
         ]
-        await bot.set_my_commands(commands, BotCommandScopeDefault(), language_code=lang)
+        successes.append(
+            await bot.set_my_commands(
+                commands,
+                BotCommandScopeDefault(),
+                language_code=lang
+            )
+        )
         await asyncio.sleep(.1)        
         
         admin_commands = commands + [
@@ -85,11 +93,12 @@ async def set_commands(bot, db):
             if cmd['to_menu']
         ]
         for admin_id in await db.get_admins():
-            await bot.set_my_commands(
+            successes.append(
+                await bot.set_my_commands(
                 admin_commands,
                 BotCommandScopeChat(admin_id),
                 language_code=lang
-            )
+            ))
             await asyncio.sleep(.1)
             # await bot.set_my_commands(
             #     admin_commands,
@@ -98,30 +107,53 @@ async def set_commands(bot, db):
             # )
             # asyncio.sleep(.1)
 
+    return tuple(successes)
 
 async def start_bot():
     
+    logger = logging.getLogger('BOT')
+    db.logger = logger.getChild('database')
+    
     try:
-        logger = logging.getLogger('BOT')
-        db.logger = logger.getChild('database')
         
         await db.force_bootstrap()
-        await db.create_tables()
-
+        
         bot = CustomAsyncTeleBot(BOT_TOKEN, logger=logger, db=db)
         
         await bot._set_me()
+
+
+        if "create_tables" in sys.argv:
+            await db.create_tables()
+            logger.info('Tables created')
+            
+            if 'dont_exit' not in sys.argv:
+                raise InterruptedError('Tables created')
+        
         
         set_filters(bot, db)
         setup_middlewares(bot, db)
 
         await load_bot_parts(bot, db, logger)
-        await set_commands(bot, db)
+            
+        
+        if "set_commands" in sys.argv:
+            logger.info('setting commands')
+            successes = await set_commands(bot, db)
+            logger.info(f"successes: {', '.join(map(str, successes))}")
+            logger.info('commands set. Stopping...')
+            
+            
+            if 'dont_exit' not in sys.argv:
+                raise InterruptedError("Commands set")
+
         
         await bot.polling(non_stop=True)
-    except (KeyboardInterrupt, SystemExit):
-        print('Stopping the bot...')
+    except (KeyboardInterrupt, SystemExit, InterruptedError):
+        logger.info('Stopping the bot...')
     finally:
+        if locals().get('bot'):
+            await bot.close_session()
         await db.teardown()
     logger.info('Goodbye!')
     
