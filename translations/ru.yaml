@@ -135,22 +135,20 @@ newsletter:
         успешно дошло до {{ s }} {{ plural_ru(s, ["юзера", "юзеров", "юзеров"]) }}
         
         Ошибок: {{ errors|length }}
-        {% set all_errors = "" %}
-        {% for user, ex in errors %}
-            {{ user ~ ": " ~ (ex.description or ex|string) ~ "\n" }}
-            {% set all_errors = all_errors + user ~ ": " ~ (ex.description or ex|string) ~ "\n" %}
-            {{ all_errors }}
-        {% endfor %}
-
-        {{ all_errors }}
-        {% if all_errors|length > 4 %}
-        {{ paste(all_errors) }}
+        {% set err_list = _('newsletter.errors_list', errors=errors, format='html') %}
+        {% if (err_list|length) < 3500 %}
+        {{ err_list|safe }}
         {% else %}
-        <blockquote>{% for user, ex in errors %}
-        <code>{{ user }}</code>: {{ ex.description or ex }}
-            {% endfor %}
-        </blockquote>
+        {% set err_list = _('newsletter.errors_list', errors=errors, format='md') %}
+        {{ paste(err_list, 'md') }}
         {% endif %}
+    
+    errors_list: |
+        {{ "<blockquote expandable>"|safe if format|default("html") == "html" else "" }}{% for user, ex in errors %}
+        {{ "<code>"|safe if format|default("html") == "html" else ("`" if format|default("html") == 'md' else '')}}{{ user }}{{ '</code>'|safe if format|default('html') == 'html' else ('`' if format|default('html') == 'md' else '') }}: {{ ex.description or ex }}
+        {% endfor %}
+        {{ "</blockquote>"|safe if format|default("html") == "html" else "" }}
+
 
 
     cancelled: Рассылка отменена!

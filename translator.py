@@ -77,7 +77,7 @@ class Translator:
         if kwargs:
             try:
                 template = env.from_string(text)
-                text = template.render(**kwargs)
+                text = template.render(**kwargs, Translator=self, _=self, self_=self)
             except Exception as e:
                 self.logger.error("Something wrong in translation", exc_info=True)
                 raise e
