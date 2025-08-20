@@ -49,9 +49,9 @@ class IsAdminFilter(AdvancedCustomFilter):
         if not await self.db.is_admin(obj.from_user.id):
             _ = await tr(obj)
             if isinstance(obj, Message):
-                await self.bot.reply(obj, _('you_are_not_admin'), quote=True)
+                await self.bot.reply(obj, await _('you_are_not_admin'), quote=True)
             elif isinstance(obj, CallbackQuery):
-                await self.bot.answer_callback_query(obj.id, _('you_are_not_admin'), True)
+                await self.bot.answer_callback_query(obj.id, await _('you_are_not_admin'), True)
             return False
         return True
 

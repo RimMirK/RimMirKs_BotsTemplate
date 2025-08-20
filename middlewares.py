@@ -49,7 +49,7 @@ class MessageMiddleware(BaseMiddleware):
         ):
             if not await self.db.is_rules_confirmed(message.from_user.id):
                 _ = await tr(message)
-                await self.bot.reply(message, _('rules.rules_not_confirmed', html=True))
+                await self.bot.reply(message, await _('rules.rules_not_confirmed', html=True))
                 return CancelUpdate()
         
         if await self.db.is_registered(message.from_user.id):
@@ -64,7 +64,7 @@ class MessageMiddleware(BaseMiddleware):
             
         if exception:
             id = await self.db.add_error(''.join(traceback.format_exception(exception)), message.from_user.id)
-            await self.bot.reply(message, _('errors.error_occurred', html=True, id=id))
+            await self.bot.reply(message, await _('errors.error_occurred', html=True, id=id))
 
 
 
@@ -82,12 +82,12 @@ class CallbackMiddleware(BaseMiddleware):
         if callback.data and not (callback.data.startswith('set_lang:') or callback.data in ['get_started', 'confirm_rules']):
             if not await self.db.is_rules_confirmed(callback.from_user.id):
                 _ = await tr(callback)
-                await self.bot.answer_callback_query(callback.id, _('rules.rules_not_confirmed', html=False), show_alert=True)
+                await self.bot.answer_callback_query(callback.id, await _('rules.rules_not_confirmed', html=False), show_alert=True)
                 return SkipHandler()
         
         if await self.db.is_banned(callback.from_user.id):
             _ = await tr(callback)
-            await self.bot.answer_callback_query(callback.id, _('you_are_banned_inline'), show_alert=True)
+            await self.bot.answer_callback_query(callback.id, await _('you_are_banned_inline'), show_alert=True)
             return CancelUpdate()
         
     async def post_process(self, callback, data, exception: Exception =None):
@@ -96,7 +96,7 @@ class CallbackMiddleware(BaseMiddleware):
             
         if exception:
             id = await self.db.add_error(''.join(traceback.format_exception(exception)), callback.from_user.id)
-            await self.bot.answer_callback_query(callback.id, _('errors.error_occurred', html=False, id=id), show_alert=True)
+            await self.bot.answer_callback_query(callback.id, await _('errors.error_occurred', html=False, id=id), show_alert=True)
         
         # await bot.answer_callback_query(callback.id)
 

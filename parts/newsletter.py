@@ -28,7 +28,7 @@ from telebot.types import (
 
 from cpytba import CustomAsyncTeleBot as Bot
 from database import DB
-from translator import get_text_translations, tr
+from translator import get_text_translations, tr, aitranslate, detect_language, jinja_env
 from logging import Logger
 
 
@@ -47,7 +47,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         if arg := (msg.text.split(maxsplit=1)[1] if len(msg.text.split()) >= 2 else ''):
             if '-important' in arg or '-i' in arg:
                 imp = True
-                await bot.reply(msg, _('newsletter.important_mode_enabled'))
+                await bot.reply(msg, await _('newsletter.important_mode_enabled'))
                 await bot.set_data(obj, important=True)
         else:
             imp = False
@@ -56,11 +56,11 @@ async def main(bot: Bot, db: DB, logger: Logger):
     
         rm = IM()
         rm.add(IB(
-            _('newsletter.switch_important_mode', on=not imp),
+            await _('newsletter.switch_important_mode', on=not imp),
             callback_data='newsletter:toggle_important_mode')
         )
     
-        await bot.reply(msg, _('newsletter.write_msg'), reply_markup=rm)
+        await bot.reply(msg, await _('newsletter.write_msg'), reply_markup=rm)
         
     
     @bot.callback_query_handler(None, c='newsletter:toggle_important_mode')
@@ -76,14 +76,14 @@ async def main(bot: Bot, db: DB, logger: Logger):
             await bot.set_data(c, important=False)
             await bot.edit_message_reply_markup(
                 c.message.chat.id, c.message.id,
-                reply_markup=IM().add(IB(_("newsletter.switch_important_mode", on=True),
+                reply_markup=IM().add(IB(await _("newsletter.switch_important_mode", on=True),
                 callback_data='newsletter:toggle_important_mode'))
             )
         else:
             await bot.set_data(c, important=True)
             await bot.edit_message_reply_markup(
                 c.message.chat.id, c.message.id,
-                reply_markup=IM().add(IB(_("newsletter.switch_important_mode", on=False),
+                reply_markup=IM().add(IB(await _("newsletter.switch_important_mode", on=False),
                 callback_data='newsletter:toggle_important_mode'))
             )
         
@@ -96,8 +96,8 @@ async def main(bot: Bot, db: DB, logger: Logger):
         
         await bot.set_data(msg, text=msg.html_text)
         await bot.reply(msg, 
-            _("newsletter.send_one_media"),
-            reply_markup=RM(True).add(KB(_("newsletter.skip"))), quote=True
+            await _("newsletter.send_one_media"),
+            reply_markup=RM(True).add(KB(await _("newsletter.skip"))), quote=True
         )
         await bot.state(msg, 'newsletter:media')
     
@@ -106,7 +106,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
     async def _newsletter_media(msg: M):
         _ = await tr(msg)
         
-        if msg.text and msg.text == _("newsletter.skip"):
+        if msg.text and msg.text == await _("newsletter.skip"):
             await bot.set_data(msg, file_type='nomedia', file_id=None)
         else:
             await bot.set_data(msg,
@@ -121,13 +121,13 @@ async def main(bot: Bot, db: DB, logger: Logger):
             )
         
         
-        await bot.reply(msg, _('newsletter.add_links'))
+        await bot.reply(msg, await _('newsletter.add_links'))
         await bot.state(msg, 'newsletter:kb')
     
     @bot.message_handler(state='newsletter:kb')
     async def _newsletter_kb(msg: M):
         _ = await tr(msg)
-        if msg.text and msg.text == _('newsletter.skip'):
+        if msg.text and msg.text == await _('newsletter.skip'):
             rm = None
         else:
             str_rows = msg.text.split('\n\n\n')
@@ -145,15 +145,20 @@ async def main(bot: Bot, db: DB, logger: Logger):
         file_id = data['file_id']
         file_type = data['file_type']
             
+        template = jinja_env.from_string(text)
+        rendered_text = await template.render_async(user=msg.from_user, bot=bot, db=db, _=_)
+        
         params = dict(
             chat_id = msg.chat.id,
-            caption = text,
+            caption = rendered_text,
             reply_markup = rm,
         )
         
+        nid = await db.add_newsletter(msg.from_user.id, text, detect_language(text))
+        
         await bot.set_state(msg.from_user.id, "newsletter:confirm", msg.chat.id)
         
-        await bot.reply(msg, _("newsletter.everything_ok"), reply_markup=RM(True).add(
+        await bot.reply(msg, await _("newsletter.everything_ok"), reply_markup=RM(True).add(
             KB(f"✅"), KB(f"❌")
         ))
         
@@ -173,7 +178,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         _ = await tr(msg)
         
         if msg.text == f'✅':
-            await bot.reply(msg, _('newsletter.started'), reply_markup=RKR())
+            await bot.reply(msg, await _('newsletter.started'), reply_markup=RKR())
             data = await bot.get_data(msg)
             rm = data['rm']
             text = data['text']
@@ -194,8 +199,10 @@ async def main(bot: Bot, db: DB, logger: Logger):
                     caption = text,
                     reply_markup = rm
                 )
-                
                 try:
+                    template = jinja_env.from_string(text)
+                    text = await template.render_async(bot=bot, db=db, _=_)
+                    params['caption'] = text
                     match file_type:
                         case 'gif':
                             await bot.send_animation(**params, animation=file_id)
@@ -210,9 +217,9 @@ async def main(bot: Bot, db: DB, logger: Logger):
                     errors.append((user['user_id'], ex))
                 await asyncio.sleep(.025)
             
-            await bot.reply(msg, _('newsletter.end', c=c, s=s, errors=errors))
+            await bot.reply(msg, await _('newsletter.end', c=c, s=s, errors=errors))
             
         else:
-            await bot.reply(msg, _('newsletter.cancelled'), reply_markup=RKR())
+            await bot.reply(msg, await _('newsletter.cancelled'), reply_markup=RKR())
             await bot.unstate(msg)
             

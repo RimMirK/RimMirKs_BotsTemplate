@@ -20,9 +20,12 @@
 with open('.api-token', 'r') as f:
     BOT_TOKEN = f.read()
 
+with open('.gemini-key', 'r') as f:
+    GEMINI_API_KEY = f.read()
 
+AI_TRANSLATE_BOT_DESCRIPTION = ""
 
 
 
 if __name__ == "__main__":
-    raise RuntimeError("To change the config, open config.pie for editing instead of running")
+    raise RuntimeError("To change the config, open config.py for *editing* instead of running")

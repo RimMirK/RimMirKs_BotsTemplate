@@ -19,6 +19,7 @@
 
 from typing import AsyncGenerator, List
 from logging import Logger
+import time as time_mod
 import time
 
 import aiosqlite
@@ -93,6 +94,33 @@ class DB:
                 error   TEXT    NOT NULL,
                 time    INTEGER,
                 user_id INTEGER REFERENCES users (user_id) 
+            );
+        """)
+        await self.sql("""
+            CREATE TABLE IF NOT EXISTS newsletters (
+                id      INTEGER PRIMARY KEY,
+                user_id INTEGER REFERENCES users (user_id),
+                text    TEXT    NOT NULL,
+                time    NUMERIC,
+                lang    TEXT,
+                sent    INTEGER DEFAULT (0) 
+            );
+        """)
+        await self.sql("""
+            CREATE TABLE IF NOT EXISTS newsletters_messages (
+                id            INTEGER PRIMARY KEY,
+                newsletter_id         REFERENCES newsletters (id) NOT NULL,
+                user_id               REFERENCES users (user_id)  NOT NULL,
+                message_id    INTEGER                             NOT NULL,
+                time          NUMERIC
+            );            
+        """)
+        await self.sql("""    
+            CREATE TABLE translated_newsletters (
+                id            INTEGER PRIMARY KEY,
+                newsletter_id INTEGER REFERENCES newsletters (id),
+                text          TEXT,
+                lang
             );
         """)
 
@@ -170,6 +198,13 @@ class DB:
             error['time_str'] = format_date(error['time'])
         return error
 
+    # NEWSLETTER #
+    
+    async def add_newsletter(self, user_id: int, text: str, lang: str, time: float=None, sent: bool=None) -> int:
+        cur = await self.sql("INSERT INTO newsletters (user_id, text, lang, time, sent) "
+                                        "VALUES (:user_id,:text,:lang,:time,:sent)",
+                       user_id=user_id, text=text, lang=lang, time=time or time_mod.time(), sent=sent, return_cursor=True)
+        return cur.lastrowid
     
 
 

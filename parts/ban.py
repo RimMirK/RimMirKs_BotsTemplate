@@ -42,17 +42,17 @@ async def main(bot: Bot, db: DB, logger: Logger):
             r = msg.reply_to_message
 
             if not r or not await db.get_user(r.from_user.id):
-                return await bot.reply(msg, _('ban.input_value'))
+                return await bot.reply(msg, await _('ban.input_value'))
             
             user_id = r.from_user.id
         
         except (ValueError, AssertionError):
-            return await bot.reply(msg, _('ban.input_value'))
+            return await bot.reply(msg, await _('ban.input_value'))
 
 
         await db.ban_user(user_id)
 
-        await bot.reply(msg, _('ban.user_banned').format(user_id=user_id))
+        await bot.reply(msg, await _('ban.user_banned').format(user_id=user_id))
         
 
     bot.add_command(0, ['unban'], get_text_translations("cmd_desc.unban"), admin=True)
@@ -67,15 +67,15 @@ async def main(bot: Bot, db: DB, logger: Logger):
             r = msg.reply_to_message
 
             if not r or not await db.get_user(r.from_user.id):
-                return await bot.reply(msg, _('ban.input_value'))
+                return await bot.reply(msg, await _('ban.input_value'))
             
             user_id = r.from_user.id
         
         except ValueError | AssertionError:
-            return await bot.reply(msg, _('ban.input_value'))
+            return await bot.reply(msg, await _('ban.input_value'))
 
 
         await db.unban_user(user_id)
 
-        await bot.reply(msg, _('bane.user_unbanned').format(user_id=user_id))
+        await bot.reply(msg, await _('bane.user_unbanned').format(user_id=user_id))
         

@@ -39,10 +39,10 @@ async def main(bot: Bot, db: DB, logger: Logger):
         try:
             eid = int(msg.text.split()[1])
         except:
-            return await bot.reply(msg, _('errors.enter_value'))
+            return await bot.reply(msg, await _('errors.enter_value'))
         error = await db.get_error(eid)
         if not error:
-            return await bot.reply(msg, _('errors.error_not_found').format(eid=eid))
+            return await bot.reply(msg, await _('errors.error_not_found').format(eid=eid))
         traceback = error.get('error', 'no traceback O_o')
         await bot.reply(msg, _(
             'errors.error_msg_fmt',

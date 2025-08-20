@@ -46,16 +46,17 @@ def get_lang_title(lang):
 
 from jinja2 import Environment, StrictUndefined
 
-env = Environment(
+jinja_env = Environment(
     undefined=StrictUndefined,
     trim_blocks=True,
-    autoescape=True
+    autoescape=True,
+    enable_async=True
 )
 
 import inspect
 import utils
 
-env.globals.update({
+jinja_env.globals.update({
     name: obj
     for name, obj in vars(utils).items()
     if inspect.isfunction(obj)
@@ -72,7 +73,7 @@ def plural_ru(n: int, forms: tuple[str, str, str]) -> str:
         return forms[1]
     return forms[2]
 
-env.globals['plural_ru'] = plural_ru
+jinja_env.globals['plural_ru'] = plural_ru
 
 class Translator:
     def __init__(self, lang, data):
@@ -80,7 +81,7 @@ class Translator:
         self.data = data
         self.logger = getLogger('BOT').getChild("translator")
 
-    def __call__(self, key, default="Error: translation not found!", **kwargs) -> str:
+    async def __call__(self, key, default="Error: translation not found!", **kwargs) -> str:
         keys = key.split(".")
         current = self.data
 
@@ -95,8 +96,8 @@ class Translator:
 
         if kwargs:
             try:
-                template = env.from_string(text)
-                text = template.render(**kwargs, Translator=self, _=self, self_=self)
+                template = jinja_env.from_string(text)
+                text = await template.render_async(**kwargs, Translator=self, _=self, self_=self)
             except Exception as e:
                 self.logger.error("Something wrong in translation", exc_info=True)
                 raise e
@@ -149,3 +150,79 @@ def get_text_translations(key: str, default="") -> dict:
     return {lang: get_translator(lang)(key, default) for lang in trans_data}
 
 
+from langdetect import detect, DetectorFactory
+
+DetectorFactory.seed = 0  # ensures consistent results
+
+def detect_language(text: str) -> str:
+    """
+    Detects the language of the given text.
+    Returns a language code, e.g., 'en', 'ru', 'fr'.
+    """
+    try:
+        return detect(text)
+    except:
+        return "unknown"
+
+
+import re
+from google import genai
+from config import GEMINI_API_KEY, AI_TRANSLATE_BOT_DESCRIPTION
+from utils.file_cache import file_cache
+
+gemini = genai.Client(api_key=GEMINI_API_KEY)
+
+@file_cache( )
+def aitranslate(text: str, to_lang: str, from_lang: str = None) -> str:
+    """
+    Translate text with Gemini while preserving Jinja2 and Markdown.
+
+    :param text: source text
+    :param to_lang: target language (e.g. "en", "uk", "pl")
+    :param from_lang: Optional. Source language (e.g. "en", "uk", "pl"). Default auto-detect
+    :return: translated text
+    """
+
+    # 1. Protect Jinja2
+    jinja_pattern = re.compile(r"({{.*?}}|{%-?.*?-%}|{#.*?#})", re.DOTALL)
+    jinja_parts = {}
+    def jinja_replacer(m):
+        key = f"__JINJA_{len(jinja_parts)}__"
+        jinja_parts[key] = m.group(0)
+        return key
+    safe_text = jinja_pattern.sub(jinja_replacer, text)
+
+
+    # 3. Gemini request
+    
+    from_lang = from_lang or detect_language(safe_text)
+
+    prompt = f"""
+You are a professional translator with expertise in writing clear, concise, and natural messages for Telegram bots. 
+
+Translate the following text from {from_lang} into {to_lang}. 
+
+Requirements:
+- Preserve placeholders exactly as they appear (__JINJA_X__, __MD_X__, etc.).
+- Keep all HTML formatting intact.
+- Maintain the original tone, style, and intent suitable for friendly, informative, or instructional bot messages.
+- Avoid adding extra commentary or explanations.
+
+Bot context:
+{AI_TRANSLATE_BOT_DESCRIPTION}
+
+Text to translate:
+{safe_text}
+"""
+    response = gemini.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt
+    )
+    translated = response.text.strip()
+
+
+    # 5. Restore Jinja2
+    for k, v in jinja_parts.items():
+        translated = translated.replace(k, v)
+
+    return translated

@@ -51,28 +51,28 @@ async def main(bot: Bot, db: DB, logger: Logger):
         if not await db.is_rules_confirmed(obj.from_user.id):
             
             rm = IM()
-            rm.add(IB(_('rules.confirm_rules_btn'), callback_data='confirm_rules'))
+            rm.add(IB(await _('rules.confirm_rules_btn'), callback_data='confirm_rules'))
             
-            with open("rules/"+_('rules_file', 'rules.en.md'), 'r', encoding='utf-8') as f:
+            with open("rules/"+await _('rules_file', 'rules.en.md'), 'r', encoding='utf-8') as f:
                 url = paste(f.read(), 'md')
         
 
             if c:
-                await bot.edit(c.message, _('rules.confirm_rules_text').format(rules_url=url), reply_markup=rm)
+                await bot.edit(c.message, await _('rules.confirm_rules_text').format(rules_url=url), reply_markup=rm)
             elif m:
-                await bot.reply(m, _('rules.confirm_rules_text').format(rules_url=url), reply_markup=rm)
+                await bot.reply(m, await _('rules.confirm_rules_text').format(rules_url=url), reply_markup=rm)
             else:
                 raise ValueError("Neither CallbackQuery nor Message provided.")
 
             return
         
         
-        text = _('menu.menu_text',
+        text = await _('menu.menu_text',
             user_id=obj.from_user.id,
         )  
         
         rm = IM()
-        rm.add(IB(_('menu.copy_my_id_btn'), copy_text=CopyTextButton(obj.from_user.id)))
+        rm.add(IB(await _('menu.copy_my_id_btn'), copy_text=CopyTextButton(obj.from_user.id)))
         
         if c:
             await bot.edit(m, text, reply_markup=rm)

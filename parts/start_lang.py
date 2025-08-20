@@ -49,14 +49,14 @@ async def main(bot: Bot, db: DB, logger: Logger):
                     btns.append(IB(get_lang_title(lang), callback_data=f'set_lang:start:{lang}'))
             rm.add(*btns, row_width=3)
 
-            rm.add(IB(_('start_lang.get_started'), callback_data='get_started'))
+            rm.add(IB(await _('start_lang.get_started'), callback_data='get_started'))
 
-            await bot.reply(msg, _('start_lang.start_text'), reply_markup=rm)
+            await bot.reply(msg, await _('start_lang.start_text'), reply_markup=rm)
         else:
             args = msg.text.split()[1].split('_')
             match args:
                 case __:
-                    return await bot.reply(msg, _('start_lang.error_start_text'))
+                    return await bot.reply(msg, await _('start_lang.error_start_text'))
 
 
     @bot.callback_query_handler(cs='set_lang')
@@ -66,7 +66,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         await db.set_lang(c.from_user.id, lang)
         _ = get_translator(lang)
         if additional == 'start':
-            await bot.answer_callback_query(c.id, _('start_lang.lang_set_to'))
+            await bot.answer_callback_query(c.id, await _('start_lang.lang_set_to'))
             rm = IM()
             btns = []
             for lang in get_langs():
@@ -74,11 +74,11 @@ async def main(bot: Bot, db: DB, logger: Logger):
                     btns.append(IB(get_lang_title(lang), callback_data=f'set_lang:start:{lang}'))
             rm.add(*btns, row_width=3)
             
-            rm.add(IB(_('start_lang.get_started'), callback_data='get_started'))
+            rm.add(IB(await _('start_lang.get_started'), callback_data='get_started'))
 
-            await bot.edit(c.message, _('start_lang.start_text'), reply_markup=rm)
+            await bot.edit(c.message, await _('start_lang.start_text'), reply_markup=rm)
         elif additional == 'set_lang':
-            await bot.answer_callback_query(c.id, _('start_lang.lang_set_to'), True)
+            await bot.answer_callback_query(c.id, await _('start_lang.lang_set_to'), True)
 
     bot.add_command(4, ['lang', 'language'], get_text_translations("cmd_desc.lang"))
     @bot.message_handler(['lang', 'language'])
