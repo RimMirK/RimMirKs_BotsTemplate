@@ -2,6 +2,8 @@
 *Developing... Please wait...*
 
 ---
+![\#StandWithUkraine](https://github.com/vshymanskyy/StandWithUkraine/blob/main/banner-direct-single.svg)
+---
 
 ### en
 
