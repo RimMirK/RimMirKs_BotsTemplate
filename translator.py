@@ -133,7 +133,7 @@ async def tr(obj: M|C|Message|CallbackQuery) -> Translator:
     lang = await db.get_lang(obj.from_user.id)
     return get_translator(lang)
 
-def get_text_translations(key: str, default="") -> dict:
+async def get_text_translations(key: str, default="") -> dict:
     def key_exists(d, keys):
         current = d
         for k in keys:
@@ -147,13 +147,15 @@ def get_text_translations(key: str, default="") -> dict:
     if not any(key_exists(d, keys) for d in trans_data.values()):
         return default
 
-    return {lang: get_translator(lang)(key, default) for lang in trans_data}
+    return {lang: await get_translator(lang)(key, default) for lang in trans_data}
 
 
 from langdetect import detect, DetectorFactory
+from utils.file_cache import file_cache
 
 DetectorFactory.seed = 0  # ensures consistent results
 
+@file_cache()
 def detect_language(text: str) -> str:
     """
     Detects the language of the given text.
@@ -168,12 +170,11 @@ def detect_language(text: str) -> str:
 import re
 from google import genai
 from config import GEMINI_API_KEY, AI_TRANSLATE_BOT_DESCRIPTION
-from utils.file_cache import file_cache
 
 gemini = genai.Client(api_key=GEMINI_API_KEY)
 
-@file_cache( )
-def aitranslate(text: str, to_lang: str, from_lang: str = None) -> str:
+@file_cache()
+async def aitranslate(text: str, to_lang: str, from_lang: str = None) -> str:
     """
     Translate text with Gemini while preserving Jinja2 and Markdown.
 
@@ -214,7 +215,7 @@ Bot context:
 Text to translate:
 {safe_text}
 """
-    response = gemini.models.generate_content(
+    response = await gemini.aio.models.generate_content(
         model="gemini-2.0-flash",
         contents=prompt
     )

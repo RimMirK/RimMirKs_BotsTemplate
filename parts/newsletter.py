@@ -28,14 +28,14 @@ from telebot.types import (
 
 from cpytba import CustomAsyncTeleBot as Bot
 from database import DB
-from translator import get_text_translations, tr, aitranslate, detect_language, jinja_env
+from translator import get_lang_title, get_langs, get_text_translations, tr, aitranslate, detect_language, jinja_env
 from logging import Logger
 
 
 async def main(bot: Bot, db: DB, logger: Logger):
 
     
-    bot.add_command(-1, ['newsletter'], get_text_translations('cmd_desc.newsletter'), True)
+    bot.add_command(-1, ['newsletter'], await get_text_translations('cmd_desc.newsletter'), True)
     @bot.callback_query_handler(None, cdata='newsletter', is_admin=True)
     @bot.message_handler(['newsletter'], is_admin=True)
     async def _newsletter(obj: M | C):
@@ -134,10 +134,10 @@ async def main(bot: Bot, db: DB, logger: Logger):
             rm = IM()
             for row in str_rows:
                 btns = row.split('\n\n')
-                buttuns = []
+                buttons = []
                 for btn in btns:
-                    buttuns.append(IB(*btn.split('\n')))   
-                rm.add(*buttuns)
+                    buttons.append(IB(*btn.split('\n')))   
+                rm.add(*buttons)
         
         await bot.set_data(msg, rm=rm)
         data = await bot.get_data(msg)
@@ -156,21 +156,28 @@ async def main(bot: Bot, db: DB, logger: Logger):
         
         nid = await db.add_newsletter(msg.from_user.id, text, detect_language(text))
         
-        await bot.set_state(msg.from_user.id, "newsletter:confirm", msg.chat.id)
+        await bot.set_state(msg.from_user.id, f"newsletter:confirm", msg.chat.id)
         
         await bot.reply(msg, await _("newsletter.everything_ok"), reply_markup=RM(True).add(
             KB(f"✅"), KB(f"❌")
         ))
         
+        
         match file_type:
             case 'gif':
-                await bot.send_animation(**params, animation=file_id)
+                sm = await bot.send_animation(**params, animation=file_id)
             case 'photo':
-                await bot.send_photo(**params, photo=file_id)
+                sm = await bot.send_photo(**params, photo=file_id)
             case 'video':
-                await bot.send_video(**params, video=file_id)
+                sm = await bot.send_video(**params, video=file_id)
             case 'nomedia':
-                await bot.reply(msg, params['caption'], reply_markup=rm)
+                sm = await bot.reply(msg, params['caption'], reply_markup=rm)
+                
+        lnrm = IM()
+        for lang in get_langs():
+            lnrm.add(IB(get_lang_title(lang), callback_data=f'newsletter:translated:{nid}:{lang}:{sm.chat.id}:{sm.id}'))
+        
+        await bot.reply(msg, await _('newsletter.translations_menu'), reply_markup=lnrm)
 
             
     @bot.message_handler(state='newsletter:confirm')
@@ -223,3 +230,21 @@ async def main(bot: Bot, db: DB, logger: Logger):
             await bot.reply(msg, await _('newsletter.cancelled'), reply_markup=RKR())
             await bot.unstate(msg)
             
+            
+    @bot.callback_query_handler(None, cs='newsletter:translated:')
+    async def _newsletter_translated(c: C):
+        _ = await tr(c)
+        
+        *__, nid, lang, cid, mid = c.data.split(':')
+        nid, cid, mid = map(int, (nid, cid, mid))
+        
+        newsletter = await db.get_newsletter(nid)
+        
+        translated = await aitranslate(newsletter['text'], lang, newsletter['lang'])
+        
+        template = jinja_env.from_string(translated)
+        text = await template.render_async(bot=bot, db=db, _=_)
+        
+        await bot.edit_message_text(text, cid, mid)
+        
+        await bot.answer_callback_query(c.id)

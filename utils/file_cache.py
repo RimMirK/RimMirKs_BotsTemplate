@@ -17,6 +17,7 @@
 #  Telegram: @RimMirK
 
 
+import asyncio
 import os
 import json
 from functools import wraps
@@ -46,22 +47,37 @@ def file_cache(cache_dir=".cache"):
                 with open(cache_file, "w", encoding="utf-8") as f:
                     json.dump(cache_data, f, ensure_ascii=False, indent=2)
 
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # Ищем в кэше по входным данным
-            for entry in cache_data:
-                if entry["args"] == args and entry["kwargs"] == kwargs:
-                    return entry["result"]
+        # Проверяем, асинхронная ли функция
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def wrapper(*args, **kwargs):
+                for entry in cache_data:
+                    if entry["args"] == args and entry["kwargs"] == kwargs:
+                        return entry["result"]
 
-            # Вызываем функцию и сохраняем
-            result = func(*args, **kwargs)
-            cache_data.append({
-                "args": args,
-                "kwargs": kwargs,
-                "result": result
-            })
-            save_cache()
-            return result
+                result = await func(*args, **kwargs)
+                cache_data.append({
+                    "args": args,
+                    "kwargs": kwargs,
+                    "result": result
+                })
+                save_cache()
+                return result
+        else:
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                for entry in cache_data:
+                    if entry["args"] == args and entry["kwargs"] == kwargs:
+                        return entry["result"]
+
+                result = func(*args, **kwargs)
+                cache_data.append({
+                    "args": args,
+                    "kwargs": kwargs,
+                    "result": result
+                })
+                save_cache()
+                return result
 
         return wrapper
     return decorator

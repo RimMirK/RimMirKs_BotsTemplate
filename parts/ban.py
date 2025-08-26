@@ -30,7 +30,7 @@ from logging import Logger
 
 async def main(bot: Bot, db: DB, logger: Logger):
 
-    bot.add_command(0, ['ban'], get_text_translations("cmd_desc.ban"), admin=True)
+    bot.add_command(0, ['ban'], await get_text_translations("cmd_desc.ban"), admin=True)
     @bot.message_handler(['ban'], is_admin=True)
     async def _ban(msg: M):
         _ = await tr(msg)
@@ -55,7 +55,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         await bot.reply(msg, await _('ban.user_banned').format(user_id=user_id))
         
 
-    bot.add_command(0, ['unban'], get_text_translations("cmd_desc.unban"), admin=True)
+    bot.add_command(0, ['unban'], await get_text_translations("cmd_desc.unban"), admin=True)
     @bot.message_handler(['unban'], is_admin=True)
     async def _unban(msg: M):
         _ = await tr(msg)

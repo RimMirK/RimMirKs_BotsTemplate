@@ -17,6 +17,7 @@
 #  Telegram: @RimMirK
 
 
+import json
 from typing import AsyncGenerator, List
 from logging import Logger
 import time as time_mod
@@ -116,16 +117,53 @@ class DB:
             );            
         """)
         await self.sql("""    
-            CREATE TABLE translated_newsletters (
+            CREATE TABLE IF NOT EXISTS translated_newsletters (
                 id            INTEGER PRIMARY KEY,
                 newsletter_id INTEGER REFERENCES newsletters (id),
                 text          TEXT,
-                lang
+                lang          TEXT
+            );
+        """)
+        await self.sql("""
+            CREATE TABLE IF NOT EXISTS cache (
+                func TEXT NOT NULL,
+                args TEXT NOT NULL,
+                kwargs TEXT NOT NULL,
+                result TEXT NOT NULL,
+                PRIMARY KEY (func, args, kwargs)
             );
         """)
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
  
+    # CACHE #
+    async def add_cache(self, func_name: str, args: tuple, kwargs: dict, result):
+        await self.sql(
+            """
+            INSERT OR REPLACE INTO cache(func, args, kwargs, result)
+            VALUES (:func, :args, :kwargs, :result)
+            """,
+            func=func_name,
+            args=json.dumps(args, ensure_ascii=False),
+            kwargs=json.dumps(kwargs, ensure_ascii=False),
+            result=json.dumps(result, ensure_ascii=False),
+        )
+
+    async def get_cache(self, func_name: str, args: tuple, kwargs: dict):
+        row = await self.sql(
+            """
+            SELECT result FROM cache
+            WHERE func = :func AND args = :args AND kwargs = :kwargs
+            LIMIT 1
+            """,
+            func=func_name,
+            args=json.dumps(args, ensure_ascii=False),
+            kwargs=json.dumps(kwargs, ensure_ascii=False),
+            asdict=True,
+        )
+        if row:
+            return json.loads(row["result"])
+        return None
 
     # USERS #
  
@@ -205,6 +243,10 @@ class DB:
                                         "VALUES (:user_id,:text,:lang,:time,:sent)",
                        user_id=user_id, text=text, lang=lang, time=time or time_mod.time(), sent=sent, return_cursor=True)
         return cur.lastrowid
+    
+    async def get_newsletter(self, nid: int) -> dict:
+        rows = await self.sql("SELECT * FROM newsletters WHERE id = :nid", nid=nid, asdict=True)
+        return rows[0]
     
 
 

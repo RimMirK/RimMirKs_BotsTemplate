@@ -53,7 +53,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
 
     
 
-    bot.add_command(2, ['py'], get_text_translations("cmd_desc.py"), True)
+    bot.add_command(2, ['py'], await get_text_translations("cmd_desc.py"), True)
     @bot.message_handler(['py'])
     async def _py(msg: M):
         if not await db.is_admin(msg.from_user.id):

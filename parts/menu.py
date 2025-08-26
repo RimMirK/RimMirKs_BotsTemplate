@@ -33,10 +33,13 @@ from utils.utils import paste
 
 async def main(bot: Bot, db: DB, logger: Logger):
 
-    bot.add_command(2, ['menu', 'get_started'], get_text_translations("cmd_desc.menu"))
+    async def flt(msg):
+        return msg.text in (await get_text_translations('back.back_to_menu_btn')).values()
+
+    bot.add_command(2, ['menu', 'get_started'], await get_text_translations("cmd_desc.menu"))
     @bot.callback_query_handler(cs='get_started')
     @bot.message_handler(['get_started', 'menu'])
-    @bot.message_handler(func=lambda msg: msg.text in get_text_translations('back.back_to_menu_btn').values())
+    @bot.message_handler(func=flt)
     async def _get_started(obj: C|M):
         c = obj if isinstance(obj, C) else None
         m = obj if isinstance(obj, M) else c.message
