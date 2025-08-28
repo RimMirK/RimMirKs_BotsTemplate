@@ -23,19 +23,44 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Start the bot (main.py)",
+            "name": "Start the bot",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal"
         },
+
         {
-            "name": "Create tables (main.py create_tables)",
+            "name": "Just Create tables",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/main.py",
             "console": "integratedTerminal",
             "args": ["create_tables"],
+        },
+        {
+            "name": "Create tables & run the bot",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "args": ["create_tables", "dont_exit"],
+        },
+        {
+            "name": "Just Set commands",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "args": ["set_commands"],
+        },
+        {
+            "name": "Set commands & run the bot",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main.py",
+            "console": "integratedTerminal",
+            "args": ["set_commands", "dont_exit"],
         }
     ]
 }

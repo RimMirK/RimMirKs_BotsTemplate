@@ -81,6 +81,8 @@ cmd_desc:
     ban: "<ID/Ответ> забанить юзера"
     unban: "<ID/Ответ> разбанить юзера"
     newsletter: "[-i режим важности] Рассылка"
+    delete_newsletter: "<ID> Удалить рассылку"
+    edit_newsletter: "<ID> Редактировать рассылку"
 
 
 errors:
@@ -149,10 +151,13 @@ newsletter:
     started: Рассылка запущена
 
     end: |
-        Рассылка завершена!
+        Рассылка завершена! ID рассылки: <code>{{ nid }}</code>
         отправлено {{ c }} {{ plural_ru(c, ["юзеру", "юзерам", "юзерам"]) }}
         успешно дошло до {{ s }} {{ plural_ru(s, ["юзера", "юзеров", "юзеров"]) }}
         
+        {{ _('newsletter.errors_block', errors=errors)|safe }}
+    
+    errors_block: |
         Ошибок: {{ errors|length }}
         {% set err_list = _('newsletter.errors_list', errors=errors, format='html') %}
         {% if (err_list|length) < 3500 %}
@@ -161,7 +166,7 @@ newsletter:
         {% set err_list = _('newsletter.errors_list', errors=errors, format='md') %}
         {{ paste(err_list, 'md') }}
         {% endif %}
-    
+
     errors_list: |
         {{ "<blockquote expandable>"|safe if format|default("html") == "html" else "" }}{% for user, ex in errors %}
         {{ "<code>"|safe if format|default("html") == "html" else ("`" if format|default("html") == 'md' else '')}}{{ user }}{{ '</code>'|safe if format|default('html') == 'html' else ('`' if format|default('html') == 'md' else '') }}: {{ ex.description or ex }}
@@ -175,3 +180,13 @@ newsletter:
 
     translating: Перевожу текст...
     translations_menu: Меню авто-переводов
+
+
+    delete:
+        invalid_id: Введен неверный ID!
+        not_found: Рассылка с ID <code>{{ nid }}</code> не найдена!
+        deleted: |
+            Рассылка с ID <code>{{ nid }}</code> удалена!
+            Удалено сообщений: {{ d }}/{{ c }}
+
+            {{ _('newsletter.errors_block', errors=errors)|safe }}

@@ -240,13 +240,20 @@ class DB:
     
     async def add_newsletter(self, user_id: int, text: str, lang: str, time: float=None, sent: bool=None) -> int:
         cur = await self.sql("INSERT INTO newsletters (user_id, text, lang, time, sent) "
-                                        "VALUES (:user_id,:text,:lang,:time,:sent)",
+                                             "VALUES (:user_id,:text,:lang,:time,:sent)",
                        user_id=user_id, text=text, lang=lang, time=time or time_mod.time(), sent=sent, return_cursor=True)
         return cur.lastrowid
     
-    async def get_newsletter(self, nid: int) -> dict:
+    async def get_newsletter(self, nid: int, with_messages: bool = False) -> dict:
         rows = await self.sql("SELECT * FROM newsletters WHERE id = :nid", nid=nid, asdict=True)
+        if with_messages and rows:
+            rows[0]['messages'] = await self.sql("SELECT * FROM newsletters_messages WHERE newsletter_id = :nid", nid=nid, asdict=True)
         return rows[0]
+    
+    async def add_newsletter_message(self, nid: int, user_id: int, message_id: int, time: float=None) -> int:
+        await self.sql("INSERT INTO newsletters_messages (newsletter_id, user_id, message_id, time) "
+                                                "VALUES (:newsletter_id,:user_id,:message_id,:time)",
+            newsletter_id=nid, user_id=user_id, message_id=message_id, time=time or time_mod.time())
     
 
 

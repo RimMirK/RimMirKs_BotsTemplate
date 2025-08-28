@@ -172,6 +172,8 @@ async def main(bot: Bot, db: DB, logger: Logger):
                 sm = await bot.send_video(**params, video=file_id)
             case 'nomedia':
                 sm = await bot.reply(msg, params['caption'], reply_markup=rm)
+        
+        await bot.set_data(msg, nid=nid)
                 
         lnrm = IM()
         for lang in get_langs():
@@ -192,6 +194,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
             file_id = data['file_id']
             file_type = data['file_type']
             important = data['important']
+            nid = data['nid']
                 
             await bot.unstate(msg)
             
@@ -207,24 +210,27 @@ async def main(bot: Bot, db: DB, logger: Logger):
                     reply_markup = rm
                 )
                 try:
-                    template = jinja_env.from_string(text)
+                    newsletter = await db.get_newsletter(nid)
+                    translated = await aitranslate(newsletter['text'], user['lang'], newsletter['lang'])
+                    template = jinja_env.from_string(translated)
                     text = await template.render_async(bot=bot, db=db, _=_)
                     params['caption'] = text
                     match file_type:
                         case 'gif':
-                            await bot.send_animation(**params, animation=file_id)
+                            sm = await bot.send_animation(**params, animation=file_id)
                         case 'photo':
-                            await bot.send_photo(**params, photo=file_id)
+                            sm = await bot.send_photo(**params, photo=file_id)
                         case 'video':
-                            await bot.send_video(**params, video=file_id)
+                            sm = await bot.send_video(**params, video=file_id)
                         case 'nomedia':
-                            await bot.send_message(user['user_id'], params['caption'], reply_markup=rm)
+                            sm = await bot.send_message(user['user_id'], params['caption'], reply_markup=rm)
+                    await db.add_newsletter_message(nid, user['user_id'], sm.id)
                     s += 1
                 except Exception as ex:
                     errors.append((user['user_id'], ex))
                 await asyncio.sleep(.025)
             
-            await bot.reply(msg, await _('newsletter.end', c=c, s=s, errors=errors))
+            await bot.reply(msg, await _('newsletter.end', c=c, s=s, errors=errors, nid=nid))
             
         else:
             await bot.reply(msg, await _('newsletter.cancelled'), reply_markup=RKR())
@@ -248,3 +254,44 @@ async def main(bot: Bot, db: DB, logger: Logger):
         await bot.edit_message_text(text, cid, mid)
         
         await bot.answer_callback_query(c.id)
+        
+        
+    bot.add_command(-1, ['delete_newsletter'], await get_text_translations('cmd_desc.delete_newsletter'), True)
+    @bot.message_handler(['delete_newsletter'], is_admin=True)
+    async def _delete_newsletter(msg: M):
+        _ = await tr(msg)
+        
+        if arg := (msg.text.split(maxsplit=1)[1] if len(msg.text.split()) >= 2 else ''):
+            try:
+                nid = int(arg)
+            except:
+                await bot.reply(msg, await _('newsletter.delete.invalid_id', nid=arg))
+                return
+
+        try:
+            newsletter = await db.get_newsletter(nid, with_messages=True)
+        except:
+            await bot.reply(msg, await _('newsletter.delete.not_found', nid=nid))
+            return
+
+        d = 0
+        c = 0
+        errors = []
+        for sm in newsletter.get('messages', []):
+            try:
+                await bot.delete_message(sm['user_id'], sm['message_id'])
+                d += 1
+            except Exception as ex:
+                errors.append((sm['user_id'], ex))
+            c += 1
+            await asyncio.sleep(.05)
+            
+        await bot.reply(msg,
+            await _('newsletter.delete.deleted', nid=nid, d=d, c=c, errors=errors)
+        )
+        
+        
+    bot.add_command(-1, ['edit_newsletter'], await get_text_translations('cmd_desc.edit_newsletter'), True)
+    @bot.message_handler(['edit_newsletter'], is_admin=True)
+    async def _edit_newsletter(msg: M):
+        pass
