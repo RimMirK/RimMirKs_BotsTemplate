@@ -32,12 +32,14 @@ venv.bak/
 # telebot
 .state-save/
 
+# db
 database.db
+
+# log
 *.log
 
-
+# dot-files
 .*
 !.vscode
 !.gitignore
-
-config.py
+!.env.example

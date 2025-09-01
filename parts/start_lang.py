@@ -30,6 +30,7 @@ from database import DB
 from translator import get_text_translations, tr, get_langs, get_lang_title, get_translator
 from logging import Logger
 from utils import format_date
+from config import LOG_REGISTER, LOG_CHAT_ID
 
 
 
@@ -39,7 +40,13 @@ async def main(bot: Bot, db: DB, logger: Logger):
     @bot.message_handler(['start'])
     async def _start(msg: Message):
         await db.bootstrap()
-        await db.register(msg.from_user.id)
+        if await db.register(msg.from_user.id):
+            if LOG_REGISTER:
+                ...
+                # await bot.send_message(
+                #     "<b>NEW USER</b>\n\n"
+                #     f"ID: <code>{msg.fro}</code>"
+                # )
         _ = await tr(msg)
         if len(msg.text.split()) == 1:
             rm = IM()

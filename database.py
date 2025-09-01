@@ -168,9 +168,14 @@ class DB:
 
     # USERS #
  
-    async def register(self, user_id: int, reg: float = None) -> None:
-        await self.sql("INSERT OR IGNORE INTO users (user_id, reg) VALUES (:user_id, :reg)", user_id=user_id, reg=reg or time.time())
-    
+    async def register(self, user_id: int, reg: float = None) -> bool:
+        cursor = await self.sql(
+            "INSERT OR IGNORE INTO users (user_id, reg) VALUES (:user_id, :reg)",
+            user_id=user_id,
+            reg=reg or time.time(),
+            return_cursor=True
+        )
+        return cursor.rowcount > 0
     async def is_registered(self, user_id: int) -> bool:
         return not not (await self.sql("SELECT user_id FROM users WHERE user_id=:user_id", user_id=user_id))
     

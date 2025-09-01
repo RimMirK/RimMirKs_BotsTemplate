@@ -16,15 +16,28 @@
 #  Repository: https://github.com/RimMirK/RimMirKs_TelegramBotTemplate
 #  Telegram: @RimMirK
 
+### EDIT HERE ###
+##  vvvvvvvvv  ##
 
-with open('.api-token', 'r') as f:
-    BOT_TOKEN = f.read()
+AI_TRANSLATE_BOT_DESCRIPTION = """
 
-with open('.gemini-key', 'r') as f:
-    GEMINI_API_KEY = f.read()
+"""
 
-AI_TRANSLATE_BOT_DESCRIPTION = ""
+LOG_CHAT_ID = -4900589816
 
+LOG_REGISTER = True
+LOG_ERRORS = True
+
+##  ^^^^^^^^^  ##
+### EDIT HERE ###
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BOT_TOKEN = os.getenv("TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_TOKEN")
 
 
 if __name__ == "__main__":
