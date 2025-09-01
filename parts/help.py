@@ -33,9 +33,9 @@ from utils import paste
 async def main(bot: Bot, db: DB, logger: Logger):
     
     
-    bot.add_command(7, ['credits'], await get_text_translations("cmd_desc.credits"))
-    @bot.message_handler(['credits'])
-    async def _credits(msg: Message):
+    bot.add_command(6, ['help'], await get_text_translations("cmd_desc.help"))
+    @bot.message_handler(['help'])
+    async def _help(msg: Message):
         _ = await tr(msg)
         
-        await bot.reply(msg, await _('credits'))
+        await bot.reply(msg, await _('coming_soon'))
