@@ -83,6 +83,7 @@ class DB:
                                         NOT NULL,
                 reg             NUMERIC,
                 lang            TEXT    DEFAULT en,
+                timezone        TEXT    DEFAULT UTC,
                 rules_confirmed INTEGER DEFAULT (0),
                 banned          INTEGER DEFAULT (0),
                 is_admin        INTEGER DEFAULT (0),
@@ -211,6 +212,11 @@ class DB:
     async def set_lang(self, user_id: int, lang: str) -> None:
         await self.sql("UPDATE users SET lang = :lang where user_id = :user_id", lang=lang, user_id=user_id)
 
+
+    # TIMEZONES #
+    
+    async def set_timezone(self, user_id: int, timezone: str) -> None:
+        await self.sql("UPDATE users SET timezone = :timezone WHERE user_id=:user_id", user_id=user_id, timezone=timezone) 
 
     # RULES #
 

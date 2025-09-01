@@ -5,12 +5,13 @@
 
 
 [ ] settings
-  [ ] timezone
+  [x] timezone
 
 [x] about
 [x] credits
 [ ] contact
 
+[ ] log
 
 final:
   [ ] translate all the stuff

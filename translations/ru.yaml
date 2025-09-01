@@ -63,10 +63,22 @@ menu:
     menu_text: |
         <b>Меню</b>
         
-        ID: <code>{{ user_id }}</code>
+        🆔 ID: <code>{{ user_id }}</code>
 
-    copy_my_id_btn: Скопировать свой ID
+    copy_my_id_btn: 🆔 Скопировать свой ID
 
+settings:
+    text: <b>Настройки</b>
+    copy_my_id_btn: 🆔 Скопировать свой ID
+    change_lang: 🌐 Change language | Изменить язык
+    change_timezone: ⏰ Изменить часовой пояс | {{ timezone }}
+
+    tz:
+        choose_region: Выбери свой регион
+        choose_timezone: Выбери свой часовой пояс
+        back_to_regions: Назад, к регионам
+        back_to_settings: Назад, к настройкам
+        timezone_set: Часовой пояс <b>{{ timezone }}</b> установлен!
 
 you_are_banned_inline: Ты забанен!
 you_are_not_admin: Ты не админ!

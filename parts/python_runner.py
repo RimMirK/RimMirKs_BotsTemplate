@@ -93,11 +93,14 @@ async def main(bot: Bot, db: DB, logger: Logger):
             )
             stop_time = time.perf_counter()
             
+            if len(result) > 2000:
+                result = paste(result, allow_206=True)
+            
             return await bot.reply(msg,
                 b("🐍 Python " + sys.version.split()[0], False) + "\n\n" +
                 pre(code, 'python') + "\n\n" + (
                     b("✨ Вывод:\n", False) + (
-                        result if result.startswith('nekobin.com/')
+                        result if result.startswith('https://paste.rs/')
                         else code_html(result)
                     ) + '\n' if result.strip() != ''
                         else b("❌ Вывода нет\n", False)
