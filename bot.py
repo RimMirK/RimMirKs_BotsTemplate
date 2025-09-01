@@ -73,25 +73,25 @@ async def set_commands(bot: CustomAsyncTeleBot, db: DB) -> tuple[bool]:
     # Set commands for each language
     for lang in get_langs():
         # Prepare user commands
-        cmds = []
-        for cmd in bot.commands.get(lang, []):
-            if cmd['description']:
-                cmds.append(cmd)
-        bot.commands[lang] = sorted(cmds, key=lambda d: d['index'])
-        
-        cmds = []
-        for cmd in bot.admin_commands.get(lang, []):
-            if cmd['description']:
-                cmds.append(cmd)
-        bot.admin_commands[lang] = sorted(cmds, key=lambda d: d['index'])
-        
-        
+        user_cmds = [cmd for cmd in bot.commands.get(lang, []) if cmd['description']]
+        user_cmds = sorted(user_cmds, key=lambda d: d['index'])
+        bot.commands[lang] = user_cmds
+
+        # Prepare admin commands, shifting their indices after user commands
+        admin_cmds = [cmd for cmd in bot.admin_commands.get(lang, []) if cmd['description']]
+        # Shift admin indices
+        for cmd in admin_cmds:
+            cmd['_shifted_index'] = cmd['index'] + len(user_cmds)
+        admin_cmds = sorted(admin_cmds, key=lambda d: d['_shifted_index'])
+        bot.admin_commands[lang] = admin_cmds
+
+        # Build user commands for menu
         commands = [
             BotCommand(
                 cmd['commands'][0],
                 cmd['description']
             )
-            for cmd in bot.commands[lang]
+            for cmd in user_cmds
             if cmd['to_menu']
         ]
         successes.append(
@@ -101,23 +101,25 @@ async def set_commands(bot: CustomAsyncTeleBot, db: DB) -> tuple[bool]:
                 language_code=lang
             )
         )
-        await asyncio.sleep(.1)        
-        
+        await asyncio.sleep(.1)
+
+        # Build admin commands for menu (user + admin, admin after user)
         admin_commands = commands + [
             BotCommand(
                 cmd['commands'][0],
                 cmd['description']
             )
-            for cmd in bot.admin_commands[lang]
+            for cmd in admin_cmds
             if cmd['to_menu']
         ]
         for admin_id in await db.get_admins():
             successes.append(
                 await bot.set_my_commands(
-                admin_commands,
-                BotCommandScopeChat(admin_id),
-                language_code=lang
-            ))
+                    admin_commands,
+                    BotCommandScopeChat(admin_id),
+                    language_code=lang
+                )
+            )
             await asyncio.sleep(.1)
             # await bot.set_my_commands(
             #     admin_commands,
@@ -147,6 +149,7 @@ async def start_bot():
             logger.info('Tables created')
             
             if 'dont_exit' not in sys.argv:
+                logger.info('tables created. Stopping...')
                 raise InterruptedError('Tables created')
         
         
@@ -160,10 +163,10 @@ async def start_bot():
             logger.info('setting commands')
             successes = await set_commands(bot, db)
             logger.info(f"successes: {', '.join(map(str, successes))}")
-            logger.info('commands set. Stopping...')
             
             
             if 'dont_exit' not in sys.argv:
+                logger.info('commands set. Stopping...')
                 raise InterruptedError("Commands set")
 
         

@@ -35,7 +35,7 @@ from utils import format_date
 
 async def main(bot: Bot, db: DB, logger: Logger):
 
-    # bot.add_command(1, ['start'], await get_text_translations("cmd_desc.start"))
+    bot.add_command(0, ['start'], await get_text_translations("cmd_desc.start"))
     @bot.message_handler(['start'])
     async def _start(msg: Message):
         await db.bootstrap()
@@ -80,7 +80,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         elif additional == 'set_lang':
             await bot.answer_callback_query(c.id, await _('start_lang.lang_set_to'), True)
 
-    bot.add_command(4, ['lang', 'language'], await get_text_translations("cmd_desc.lang"))
+    bot.add_command(2, ['lang', 'language'], await get_text_translations("cmd_desc.lang"))
     @bot.message_handler(['lang', 'language'])
     async def _lang(msg):
         _ = await tr(msg)

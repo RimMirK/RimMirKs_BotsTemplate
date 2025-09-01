@@ -35,7 +35,7 @@ from logging import Logger
 async def main(bot: Bot, db: DB, logger: Logger):
 
     
-    bot.add_command(-1, ['newsletter'], await get_text_translations('cmd_desc.newsletter'), True)
+    bot.add_command(4, ['newsletter'], await get_text_translations('cmd_desc.newsletter'), True)
     @bot.callback_query_handler(None, cdata='newsletter', is_admin=True)
     @bot.message_handler(['newsletter'], is_admin=True)
     async def _newsletter(obj: M | C):
@@ -256,7 +256,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         await bot.answer_callback_query(c.id)
         
         
-    bot.add_command(-1, ['delete_newsletter'], await get_text_translations('cmd_desc.delete_newsletter'), True)
+    bot.add_command(6, ['delete_newsletter'], await get_text_translations('cmd_desc.delete_newsletter'), True)
     @bot.message_handler(['delete_newsletter'], is_admin=True)
     async def _delete_newsletter(msg: M):
         _ = await tr(msg)
@@ -291,7 +291,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         )
         
         
-    bot.add_command(-1, ['edit_newsletter'], await get_text_translations('cmd_desc.edit_newsletter'), True)
+    bot.add_command(5, ['edit_newsletter'], await get_text_translations('cmd_desc.edit_newsletter'), True)
     @bot.message_handler(['edit_newsletter'], is_admin=True)
     async def _edit_newsletter(msg: M):
         pass

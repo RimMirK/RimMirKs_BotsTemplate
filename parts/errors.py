@@ -32,7 +32,7 @@ from logging import Logger
 async def main(bot: Bot, db: DB, logger: Logger):
 
 
-    bot.add_command(0, ['get_error'], await get_text_translations('cmd_desc.get_error'))
+    bot.add_command(2, ['get_error'], await get_text_translations('cmd_desc.get_error'), True)
     @bot.message_handler(['get_error'], is_admin=True)
     async def _get_error(msg: M):
         _ = await tr(msg)

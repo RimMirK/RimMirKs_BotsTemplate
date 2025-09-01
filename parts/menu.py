@@ -36,7 +36,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
     async def flt(msg):
         return msg.text in (await get_text_translations('back.back_to_menu_btn')).values()
 
-    bot.add_command(2, ['menu', 'get_started'], await get_text_translations("cmd_desc.menu"))
+    bot.add_command(1, ['menu', 'get_started'], await get_text_translations("cmd_desc.menu"))
     @bot.callback_query_handler(cs='get_started')
     @bot.message_handler(['get_started', 'menu'])
     @bot.message_handler(func=flt)

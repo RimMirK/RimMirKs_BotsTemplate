@@ -35,7 +35,7 @@ from utils import paste
 async def main(bot: Bot, db: DB, logger: Logger):
 
     
-    bot.add_command(3, ['rules'], await get_text_translations("cmd_desc.rules"))
+    bot.add_command(4, ['rules'], await get_text_translations("cmd_desc.rules"))
     @bot.message_handler(['rules'])
     async def _rules(msg: Message):
         _ = await tr(msg)
