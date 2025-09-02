@@ -52,7 +52,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
         
         rm = IM()
         rm.add(IB(await _('settings.copy_my_id_btn'), copy_text=CopyTextButton(msg.from_user.id)))
-        rm.add(IB(await _('settings.change_lang'), callback_data='_'))
+        rm.add(IB(await _('settings.change_lang'), callback_data='settings:change_lang'))
         rm.add(IB(await _('settings.change_timezone', timezone=user['timezone']), callback_data='settings:timezone'))
         
         await bot.reply(msg, await _('settings.text'), reply_markup=rm)
@@ -105,6 +105,9 @@ async def main(bot: Bot, db: DB, logger: Logger):
         
         await bot.reply(msg, await _('settings.tz.choose_timezone'), reply_markup=rm)
     
+    @bot.callback_query_handler(c='settings:change_lang')
+    async def _settings_change_lang(c: C):
+        raise Exception('test')
     
     @bot.message_handler(func=lambda m: m.text in (cities + sum(timezones.values(), [])))
     async def _tz(msg: M):

@@ -113,7 +113,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
             return await bot.reply(msg,
                 b("🐍 Python " + sys.version.split()[0], False) + "\n\n" +
                 pre(code, 'python') + "\n\n" +
-                b("❌ Время на исполнение кода исчерапно! TimeoutError", False),
+                b("❌ Время на исполнение кода исчерпано! TimeoutError", False),
 
                 disable_web_page_preview=True,
             )

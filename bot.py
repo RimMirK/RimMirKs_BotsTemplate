@@ -154,7 +154,7 @@ async def start_bot():
         
         
         set_filters(bot, db)
-        setup_middlewares(bot, db)
+        setup_middlewares(bot, db, logger)
 
         await load_bot_parts(bot, db, logger)
             

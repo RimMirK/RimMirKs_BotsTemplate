@@ -24,13 +24,14 @@ from telebot.types import (
     CallbackQuery as C, Message, Message as M,
     CopyTextButton
 )
+from telebot.util import user_link
 
 from cpytba import CustomAsyncTeleBot as Bot
 from database import DB
-from translator import get_text_translations, tr, get_langs, get_lang_title, get_translator
+from translator import get_text_translations, tr, get_langs, get_lang_title, get_translator, jinja_env
 from logging import Logger
 from utils import format_date
-from config import LOG_REGISTER, LOG_CHAT_ID
+from config import LOG_REGISTER, LOG_CHAT_ID, LOG_REGISTER_TEMPLATE
 
 
 
@@ -41,12 +42,12 @@ async def main(bot: Bot, db: DB, logger: Logger):
     async def _start(msg: Message):
         await db.bootstrap()
         if await db.register(msg.from_user.id):
+            _ = await tr(msg)
             if LOG_REGISTER:
-                ...
-                # await bot.send_message(
-                #     "<b>NEW USER</b>\n\n"
-                #     f"ID: <code>{msg.fro}</code>"
-                # )
+                template = jinja_env.from_string(LOG_REGISTER_TEMPLATE)
+                msg.from_user.link = user_link(msg.from_user)
+                text = await template.render_async(bot=bot, _=_, db=db, user=msg.from_user, chat=msg.chat, msg=msg)
+                await bot.send_message(LOG_CHAT_ID, text)
         _ = await tr(msg)
         if len(msg.text.split()) == 1:
             rm = IM()

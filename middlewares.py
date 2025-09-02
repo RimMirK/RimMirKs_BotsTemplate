@@ -20,14 +20,17 @@
 import traceback
 from telebot.asyncio_handler_backends import BaseMiddleware
 from telebot.asyncio_handler_backends import CancelUpdate, SkipHandler
+from telebot.util import user_link
 
-from translator import tr
+from translator import tr, jinja_env
+from config import LOG_CHAT_ID, LOG_ERRORS, LOG_ERRORS_TEMPLATE
 
 class MessageMiddleware(BaseMiddleware):
-    def __init__(self, bot, db):
+    def __init__(self, bot, db, logger):
         self.update_types = ['message']
         self.bot = bot
         self.db = db
+        self.logger = logger
         
     async def pre_process(self, message, data):
         
@@ -63,16 +66,34 @@ class MessageMiddleware(BaseMiddleware):
         _ = await tr(message)
             
         if exception:
-            id = await self.db.add_error(''.join(traceback.format_exception(exception)), message.from_user.id)
+            tb = ''.join(traceback.format_exception(exception))
+            id = await self.db.add_error(tb, message.from_user.id)
             await self.bot.reply(message, await _('errors.error_occurred', html=True, id=id))
+            if LOG_ERRORS:
+                error = await self.db.get_error(id)
+                template = jinja_env.from_string(LOG_ERRORS_TEMPLATE)
+                text = await template.render_async(
+                    eid=id,
+                    user_id=error.get('user_id'),
+                    user_link=user_link(message.from_user),
+                    time=error.get('time'),
+                    time_str=error.get('time_str'),
+                    traceback=tb,
+                    is_callback=False
+                )
+                try:
+                    await self.bot.send_message(LOG_CHAT_ID, text)
+                except:
+                    self.logger.error("Can't send error to log chat", exc_info=True)
 
 
 
 class CallbackMiddleware(BaseMiddleware):
-    def __init__(self, bot, db):
+    def __init__(self, bot, db, logger):
         self.update_types = ['callback_query']
         self.bot = bot
         self.db = db
+        self.logger = logger
         
     async def pre_process(self, callback, data):
         from translator import tr
@@ -95,12 +116,29 @@ class CallbackMiddleware(BaseMiddleware):
         _ = await tr(callback)
             
         if exception:
-            id = await self.db.add_error(''.join(traceback.format_exception(exception)), callback.from_user.id)
+            tb = ''.join(traceback.format_exception(exception))
+            id = await self.db.add_error(tb, callback.from_user.id)
             await self.bot.answer_callback_query(callback.id, await _('errors.error_occurred', html=False, id=id), show_alert=True)
+            if LOG_ERRORS:
+                error = await self.db.get_error(id)
+                template = jinja_env.from_string(LOG_ERRORS_TEMPLATE)
+                text = await template.render_async(
+                    eid=id,
+                    user_id=error.get('user_id'),
+                    user_link=user_link(callback.from_user),
+                    time=error.get('time'),
+                    time_str=error.get('time_str'),
+                    traceback=tb,
+                    is_callback=True
+                )
+                try:
+                    await self.bot.send_message(LOG_CHAT_ID, text)
+                except:
+                    self.logger.error("Can't send error to log chat", exc_info=True)
         
         # await bot.answer_callback_query(callback.id)
 
 
-def setup_middlewares(bot, db):
-    bot.setup_middleware(MessageMiddleware(bot, db))
-    bot.setup_middleware(CallbackMiddleware(bot, db))
+def setup_middlewares(bot, db, logger):
+    bot.setup_middleware(MessageMiddleware (bot, db, logger.getChild( 'MessageMiddleware')))
+    bot.setup_middleware(CallbackMiddleware(bot, db, logger.getChild('CallbackMiddleware')))

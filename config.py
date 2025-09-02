@@ -28,6 +28,35 @@ LOG_CHAT_ID = -4900589816
 LOG_REGISTER = True
 LOG_ERRORS = True
 
+LOG_REGISTER_TEMPLATE = """
+<b>NEW USER</b>
+
+ID: <code>{{ user.id }}</code>
+Name: {{ user.full_name }}
+Username: {{ "@"+user.username if user.username else "-"}}
+Premium: {{ "Yes" if user.is_premium else "No" }}
+Link: {{ user.link|safe }}
+
+#newuser #u{{ user.id }}
+"""
+LOG_ERRORS_TEMPLATE = """
+<b>ERROR</b> {{ "(callback)" if is_callback else "" }}
+
+<b>ID</b>: <code>{{ eid }}</code>
+<b>USER</b>: {{ user_link|safe }} [<code>{{ user_id }}</code>]
+<b>TIME</b>: <b>{{ time_str }}</b> [{{ time }}]
+<b>URL</b>: {{ paste(traceback, "py", True) }}
+<b>TRACEBACK</b>:
+<pre language="python">{% if traceback|length > 2000 %}
+{{ traceback[:1000] ~ "\n\n...\n\n" ~ traceback[-1000:] }}
+{% else %}
+{{ traceback }}
+{% endif %}
+</pre>
+
+#error #u{{ user_id }}
+"""
+
 ##  ^^^^^^^^^  ##
 ### EDIT HERE ###
 
