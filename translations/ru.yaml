@@ -44,7 +44,7 @@ rules:
     confirm_rules_text: |
         Перед началом работы с ботом, пожалуйста, ознакомьтесь с нашими правилами и подтвердите их принятие.
 
-        <b>Правила: {rules_url}</b>
+        <b>Правила: {{ rules_url }}</b>
 
         <b><i>ВНИМАНИЕ! Ссылка на правила может меняться!</i></b>
 
@@ -55,7 +55,7 @@ rules:
         В случае чего, вы можете повторно ознакомиться с правилами, используя команду /rules.
         
     rules_text: |
-        Вот правила: {rules_url}
+        Вот правила: {{ rules_url }}
 
         <b><i>ВНИМАНИЕ! Ссылка на правила может меняться!</i></b>
 
@@ -139,7 +139,7 @@ errors:
 
     enter_value: Введи значение!
     input_value: Введи значение!
-    error_not_found: Ошибка <code>{eid}</code> не найдена!
+    error_not_found: Ошибка <code>{{ eid }}</code> не найдена!
     error_msg_fmt: |
         <b>ERROR INFO</b>
 
@@ -158,8 +158,8 @@ errors:
 ban:
     enter_value: Введи значение!
     input_value: Введи значение!
-    user_banned: Юзер <code>{user_id}</code> забанен навсегда!
-    user_unbanned: Юзер <code>{user_id}</code> Разбанен!
+    user_banned: Юзер <code>{{ user_id }}</code> забанен навсегда!
+    user_unbanned: Юзер <code>{{ user_id }}</code> Разбанен!
 
 back:
     back_btn: <− Назад

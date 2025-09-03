@@ -10,7 +10,11 @@
 [x] about
 [x] credits
 
-[ ] log
+[x] log
+
+[ ] rework all .format to jinja templates
+
+[ ] Callbacks for groups
 
 final:
   [ ] translate all the stuff

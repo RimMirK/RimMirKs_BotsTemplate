@@ -52,7 +52,7 @@ async def main(bot: Bot, db: DB, logger: Logger):
 
         await db.ban_user(user_id)
 
-        await bot.reply(msg, await _('ban.user_banned').format(user_id=user_id))
+        await bot.reply(msg, await _('ban.user_banned', user_id=user_id))
         
 
     bot.add_command(1, ['unban'], await get_text_translations("cmd_desc.unban"), admin=True)
@@ -77,5 +77,5 @@ async def main(bot: Bot, db: DB, logger: Logger):
 
         await db.unban_user(user_id)
 
-        await bot.reply(msg, await _('bane.user_unbanned').format(user_id=user_id))
+        await bot.reply(msg, await _('bane.user_unbanned', user_id=user_id))
         

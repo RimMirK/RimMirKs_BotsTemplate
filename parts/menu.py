@@ -61,9 +61,9 @@ async def main(bot: Bot, db: DB, logger: Logger):
         
 
             if c:
-                await bot.edit(c.message, await _('rules.confirm_rules_text').format(rules_url=url), reply_markup=rm)
+                await bot.edit(c.message, await _('rules.confirm_rules_text', rules_url=url), reply_markup=rm)
             elif m:
-                await bot.reply(m, await _('rules.confirm_rules_text').format(rules_url=url), reply_markup=rm)
+                await bot.reply(m, await _('rules.confirm_rules_text', rules_url=url), reply_markup=rm)
             else:
                 raise ValueError("Neither CallbackQuery nor Message provided.")
 

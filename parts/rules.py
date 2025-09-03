@@ -47,9 +47,9 @@ async def main(bot: Bot, db: DB, logger: Logger):
             rm = IM()
             rm.add(IB(await _('rules.confirm_rules_btn'), callback_data='confirm_rules'))
             
-            await bot.reply(msg, await _('rules.confirm_rules_text').format(rules_url=url), reply_markup=rm)
+            await bot.reply(msg, await _('rules.confirm_rules_text', rules_url=url), reply_markup=rm)
         else:
-            await bot.reply(msg, await _('rules.rules_text').format(rules_url=url))
+            await bot.reply(msg, await _('rules.rules_text', rules_url=url))
 
 
     @bot.callback_query_handler(cs='confirm_rules')
