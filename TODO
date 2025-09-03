@@ -12,7 +12,7 @@
 
 [x] log
 
-[ ] rework all .format to jinja templates
+[x] rework all .format to jinja templates
 
 [ ] Callbacks for groups
 
