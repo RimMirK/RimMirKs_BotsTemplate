@@ -32,6 +32,7 @@ from database import DB
 from translator import get_text_translations, tr
 from logging import Logger
 from utils import paste
+from utils.lang import get_langs_rm
 
 async def main(bot: Bot, db: DB, logger: Logger):
     
@@ -41,21 +42,23 @@ async def main(bot: Bot, db: DB, logger: Logger):
     bot.add_command(3, ['settings'], await get_text_translations("cmd_desc.settings"))
     @bot.message_handler(func=flt)
     @bot.message_handler(['settings'])
-    async def _settings(msg: Message):
-        _ = await tr(msg)
+    @bot.callback_query_handler(c='settings')
+    async def _settings(obj: M|C):
+        _ = await tr(obj)
         
-        if msg.text == await _("settings.tz.back_to_settings"):
-            m = await bot.reply(msg, 'Loading...', reply_markup=KR())
-            await bot.delete(m)
+        if isinstance(obj, M):
+            if obj.text == await _("settings.tz.back_to_settings"):
+                m = await bot.reply(obj, 'Loading...', reply_markup=KR())
+                await bot.delete(m)
         
-        user = await db.get_user(msg.from_user.id)
+        user = await db.get_user(obj.from_user.id)
         
         rm = IM()
-        rm.add(IB(await _('settings.copy_my_id_btn'), copy_text=CopyTextButton(msg.from_user.id)))
+        rm.add(IB(await _('settings.copy_my_id_btn'), copy_text=CopyTextButton(obj.from_user.id)))
         rm.add(IB(await _('settings.change_lang'), callback_data='settings:change_lang'))
         rm.add(IB(await _('settings.change_timezone', timezone=user['timezone']), callback_data='settings:timezone'))
-        
-        await bot.reply(msg, await _('settings.text'), reply_markup=rm)
+
+        await bot.answer(obj, await _('settings.text'), reply_markup=rm)
         
     
     timezones = [zone for zone in pytz.all_timezones if '/' in zone]
@@ -107,7 +110,15 @@ async def main(bot: Bot, db: DB, logger: Logger):
     
     @bot.callback_query_handler(c='settings:change_lang')
     async def _settings_change_lang(c: C):
-        raise Exception('test')
+        _ = await tr(c)
+        rm = IM()
+        rm = get_langs_rm(rm, 'set_lang')
+        rm.add(IB(await _("back.back_btn"), callback_data='settings'))
+        await bot.edit(
+            c.message,
+            " • ".join((await get_text_translations('settings.choose_lang', 'choose language')).values()),
+            reply_markup=rm
+        )
     
     @bot.message_handler(func=lambda m: m.text in (cities + sum(timezones.values(), [])))
     async def _tz(msg: M):

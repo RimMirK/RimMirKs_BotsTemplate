@@ -32,6 +32,7 @@ from translator import get_text_translations, tr, get_langs, get_lang_title, get
 from logging import Logger
 from utils import format_date
 from config import LOG_REGISTER, LOG_CHAT_ID, LOG_REGISTER_TEMPLATE
+from utils.lang import get_langs_rm
 
 
 
@@ -49,13 +50,9 @@ async def main(bot: Bot, db: DB, logger: Logger):
                 text = await template.render_async(bot=bot, _=_, db=db, user=msg.from_user, chat=msg.chat, msg=msg)
                 await bot.send_message(LOG_CHAT_ID, text)
         _ = await tr(msg)
+        rm = IM()
         if len(msg.text.split()) == 1:
-            rm = IM()
-            btns = []
-            for lang in get_langs():
-                if len(lang) <= 3:
-                    btns.append(IB(get_lang_title(lang), callback_data=f'set_lang:start:{lang}'))
-            rm.add(*btns, row_width=3)
+            rm = get_langs_rm(rm, 'start')
 
             rm.add(IB(await _('start_lang.get_started'), callback_data='get_started'))
 
@@ -73,20 +70,17 @@ async def main(bot: Bot, db: DB, logger: Logger):
         additional = c.data.split(':')[-2]
         await db.set_lang(c.from_user.id, lang)
         _ = get_translator(lang)
-        if additional == 'start':
-            await bot.answer_callback_query(c.id, await _('start_lang.lang_set_to'))
-            rm = IM()
-            btns = []
-            for lang in get_langs():
-                if len(lang) <= 3:
-                    btns.append(IB(get_lang_title(lang), callback_data=f'set_lang:start:{lang}'))
-            rm.add(*btns, row_width=3)
-            
-            rm.add(IB(await _('start_lang.get_started'), callback_data='get_started'))
+        match additional:
+            case 'start':
+                await bot.answer_callback_query(c.id, await _('start_lang.lang_set_to'))
+                rm = IM()
+                rm = get_langs_rm(rm, 'start')
+                
+                rm.add(IB(await _('start_lang.get_started'), callback_data='get_started'))
 
-            await bot.edit(c.message, await _('start_lang.start_text'), reply_markup=rm)
-        elif additional == 'set_lang':
-            await bot.answer_callback_query(c.id, await _('start_lang.lang_set_to'), True)
+                await bot.edit(c.message, await _('start_lang.start_text'), reply_markup=rm)
+            case 'set_lang':
+                await bot.answer_callback_query(c.id, await _('start_lang.lang_set_to'), True)
 
     bot.add_command(2, ['lang', 'language'], await get_text_translations("cmd_desc.lang"))
     @bot.message_handler(['lang', 'language'])
@@ -94,13 +88,11 @@ async def main(bot: Bot, db: DB, logger: Logger):
         _ = await tr(msg)
 
         rm = IM()
-        btns = []
-        langs = []
-        for lang in get_langs():
-            if len(lang) <= 3:
-                btns.append(IB(get_lang_title(lang), callback_data=f'set_lang:{lang}'))
-                langs.append(get_translator(lang)('start_lang.choose_lang'))
-        rm.add(*btns, row_width=3)
+        rm = get_langs_rm(rm, 'set_lang')
 
 
-        await bot.reply(msg, " · ".join(langs), reply_markup=rm)
+        await bot.reply(
+            msg,
+            " • ".join((await get_text_translations('settings.choose_lang', 'choose language')).values()),
+            reply_markup=rm
+        )

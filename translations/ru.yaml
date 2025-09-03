@@ -80,6 +80,8 @@ settings:
         back_to_settings: Назад, к настройкам
         timezone_set: Часовой пояс <b>{{ timezone }}</b> установлен!
 
+    choose_lang: Выберите язык
+
 you_are_banned_inline: Ты забанен!
 you_are_not_admin: Ты не админ!
 
